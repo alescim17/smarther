@@ -1,0 +1,17 @@
+{
+  "domain": "bticino_smarther_mqtt",
+  "name": "BTicino Smarther MQTT",
+  "codeowners": [
+    "@alescim17"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "mqtt"
+  ],
+  "documentation": "https://github.com/alescim17/smarther",
+  "integration_type": "device",
+  "iot_class": "cloud_push",
+  "issue_tracker": "https://github.com/alescim17/smarther/issues",
+  "requirements": [],
+  "version": "0.1.0b1"
+}

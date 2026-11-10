@@ -1,0 +1,37 @@
+{
+  "title": "BTicino Smarther MQTT",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up a Smarther thermostat",
+        "description": "Configure an existing MQTT bridge first. No device commands are sent during setup.",
+        "data": {
+          "name": "Thermostat name",
+          "topic_prefix": "MQTT device topic prefix"
+        },
+        "data_description": {
+          "topic_prefix": "Use the topic prefix ending just before /device_state."
+        }
+      }
+    },
+    "error": {
+      "mqtt_not_ready": "Configure MQTT in Home Assistant first.",
+      "invalid_prefix": "Invalid MQTT topic prefix.",
+      "invalid_name": "Please enter a name."
+    },
+    "abort": {
+      "already_configured": "This thermostat is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Control policy",
+        "description": "Only enable after bridge and duplicate-control checks.",
+        "data": {
+          "enable_controls": "Allow thermostat commands"
+        }
+      }
+    }
+  }
+}

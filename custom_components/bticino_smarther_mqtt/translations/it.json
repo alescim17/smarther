@@ -1,0 +1,37 @@
+{
+  "title": "BTicino Smarther MQTT",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configura un termostato Smarther",
+        "description": "Configura prima il bridge MQTT. Durante questa procedura non vengono inviati comandi al termostato.",
+        "data": {
+          "name": "Nome termostato",
+          "topic_prefix": "Prefisso topic MQTT del dispositivo"
+        },
+        "data_description": {
+          "topic_prefix": "Inserisci il prefisso senza /device_state o /set."
+        }
+      }
+    },
+    "error": {
+      "mqtt_not_ready": "Configura prima l'integrazione MQTT di Home Assistant.",
+      "invalid_prefix": "Prefisso del topic MQTT non valido.",
+      "invalid_name": "Inserisci un nome."
+    },
+    "abort": {
+      "already_configured": "Questo termostato è già configurato."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Autorizzazione comandi",
+        "description": "Abilita solo dopo la verifica del bridge e la disattivazione dei comandi del vecchio package.",
+        "data": {
+          "enable_controls": "Consenti comandi al termostato"
+        }
+      }
+    }
+  }
+}

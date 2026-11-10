@@ -1,0 +1,16 @@
+# Optional complete dashboard. Replace climate.example_smarther with YOUR entity.
+# Import via a new user-owned dashboard's supported raw configuration editor.
+# Installation/update never imports this file or modifies an existing dashboard.
+title: Smarther
+views:
+  - title: Climate
+    path: climate
+    icon: mdi:thermostat
+    cards:
+      - type: thermostat
+        entity: climate.example_smarther
+      - type: history-graph
+        title: Temperature history
+        hours_to_show: 24
+        entities:
+          - climate.example_smarther
