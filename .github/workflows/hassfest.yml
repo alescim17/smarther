@@ -1,0 +1,55 @@
+name: Validate hassfest and ZIP
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hassfest:
+    name: Hassfest and release asset validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate integration with hassfest
+        uses: home-assistant/actions/hassfest@master
+      - name: Build and check release ZIP without publishing
+        shell: bash
+        run: |
+          python3 scripts/build_release.py --output "$RUNNER_TEMP/smarther-package"
+          python3 - <<'PY'
+          import hashlib
+          import os
+          import struct
+          import zipfile
+          from pathlib import Path, PurePosixPath
+
+          root = Path("custom_components/bticino_smarther_mqtt")
+          asset = Path(os.environ["RUNNER_TEMP"]) / "smarther-package" / "bticino_smarther_mqtt.zip"
+          with zipfile.ZipFile(asset) as z:
+              assert z.testzip() is None
+              names = z.namelist()
+              assert len(names) == len(set(names))
+              assert {"manifest.json", "brand/icon.png", "brand/icon@2x.png"} <= set(names)
+              assert "brand/icon.svg" not in names
+              for name in names:
+                  posix = PurePosixPath(name)
+                  assert not posix.is_absolute() and ".." not in posix.parts
+                  assert not name.startswith("custom_components/")
+                  assert z.read(name) == (root / name).read_bytes()
+              for name, size in (("brand/icon.png", 256), ("brand/icon@2x.png", 512)):
+                  data = z.read(name)
+                  assert data[:8] == b"\x89PNG\r\n\x1a\n"
+                  assert struct.unpack(">II", data[16:24]) == (size, size)
+          digest = hashlib.sha256(asset.read_bytes()).hexdigest()
+          assert asset.with_suffix(".zip.sha256").read_text() == f"{digest}  {asset.name}\n"
+          print(f"Validated {len(names)} flat component files; ZIP SHA256 {digest}")
+          PY

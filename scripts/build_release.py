@@ -13,8 +13,8 @@ DOMAIN = "bticino_smarther_mqtt"
 TOP = {"__init__.py", "button.py", "climate.py", "config_flow.py", "const.py",
        "diagnostics.py", "entity.py", "mqtt_bridge.py", "protocol.py", "select.py",
        "sensor.py", "manifest.json", "strings.json", "LICENSE", "NOTICE.md"}
-EXTRA = {"translations/en.json", "translations/it.json", "brand/icon.svg",
-         "brand/icon.png", "brand/icon@2x.png", "examples/dashboard.yaml"}
+EXTRA = {"translations/en.json", "translations/it.json", "brand/icon.png",
+         "brand/icon@2x.png", "examples/dashboard.yaml"}
 ALLOWED = TOP | EXTRA
 
 
