@@ -4,6 +4,15 @@ Use a compatible native integration release from the approved public distributio
 Home Assistant Marketplace/HACS replaces only the component directory. The broker,
 bridge, user dashboards, configuration entries and Recorder remain separately owned.
 
+## Migrating from a legacy YAML configuration
+
+Use [the migration guide](MIGRATION.md) before installing the native integration
+alongside legacy YAML entities. A native integration update and a migration from
+a legacy YAML package are different operations. The former preserves its own
+entity registry and Recorder history; it does not adopt old YAML unique IDs or
+merge legacy history automatically. Do not re-enable legacy command writers or
+updaters to complete a migration.
+
 ## Before changing versions
 
 Make a supported Home Assistant backup covering configuration, registries and
