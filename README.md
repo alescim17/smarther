@@ -40,7 +40,9 @@ process. Private repositories are not supported by the public HACS path.
 
 ## Update, history and rollback
 
-Read [the update guide](docs/UPDATE.md). Keep the existing entry, prefix, options,
+Read [the update guide](docs/UPDATE.md). If migrating from an older YAML-based
+Smarther configuration, follow [the migration guide](docs/MIGRATION.md) first.
+Keep the existing native entry, prefix, options,
 entity/device identities and Recorder database. Do not delete and re-add the
 thermostat for an update. Retain a supported backup and the previous compatible
 native release; the historical YAML package is not a compatible rollback target.

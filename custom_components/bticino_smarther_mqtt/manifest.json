@@ -1,6 +1,9 @@
 {
   "domain": "bticino_smarther_mqtt",
   "name": "BTicino Smarther MQTT",
+  "categories": [
+    "climate.thermostats_heating"
+  ],
   "codeowners": [
     "@alescim17"
   ],
