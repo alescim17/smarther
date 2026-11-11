@@ -58,7 +58,7 @@ frontend package is required.
 Use +/- or type a target and choose **Apply** (or Enter). Selecting a program
 also requires **Apply**. In the Boost view, choosing 30/60/90 minutes is local;
 **Start Boost** sends the explicit request. Mode and cancel actions require a
-click. Commands recheck read-only, availability, live telemetry, device mapping
+click. Commands recheck read-only, availability, device mapping
 and valid values at the gesture boundary. State is never updated optimistically.
 
 Temperature and humidity use Home Assistant's authenticated history API for the
@@ -81,10 +81,10 @@ minute while the panel is open. If history/Recorder is unavailable or excludes
 the entity, the card shows an honest unavailable/empty state; thermostat readings
 and controls still work. History requires no new manual setup for the panel.
 
-Read-only, unavailable and stale states retain readings/status but block command
-controls. Retained snapshots alone do not authorize commands. Backend bridge,
-read-only and live-telemetry checks remain authoritative. A successful service
-request is not proof that the thermostat applied it.
+Read-only and unavailable states block command controls. Retained or stale
+telemetry remains visible as a warning but does not block commands when a valid
+device state has been observed and controls are enabled. Readings may be out of
+date; a successful service request is not proof that the thermostat applied it.
 
 ## Optional personal dashboards
 
@@ -116,8 +116,9 @@ abilita comandi e non modifica le dashboard personali.
 
 Il pannello include temperatura, modalità, programma, Boost e telemetria. La grafica riprende il quadrante della card originale, con scorciatoie laterali,
 grafici temperatura/umidità e statistiche dei minuti di riscaldamento registrati.
-Funziona allo stesso modo anche all’apertura diretta. Sola lettura,
-indisponibilità e telemetria obsoleta impediscono i comandi in entrambi i casi.
+Funziona allo stesso modo anche all’apertura diretta. Sola lettura e
+indisponibilità impediscono i comandi; la telemetria obsoleta viene segnalata,
+ma non blocca i comandi se è stato osservato uno stato valido.
 
 ## References
 

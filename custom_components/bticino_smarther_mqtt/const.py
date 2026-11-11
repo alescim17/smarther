@@ -9,7 +9,6 @@ DEFAULT_SHOW_PANEL = True
 DEFAULT_NAME = "Smarther"
 MQTT_DOMAIN = "mqtt"
 
-# Until a vendor-broker heartbeat is qualified, *never* treat a retained
-# snapshot or an indefinitely old MQTT message as command authorization.
+# Freshness threshold for telemetry display and recorded heating estimates.
 MAX_CONTROL_AGE_SECONDS = 20 * 60
 

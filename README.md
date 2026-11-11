@@ -17,7 +17,7 @@ of the remote MQTT service; service terms and broker-side limits may apply.
 
 ## Compatibility
 
-The current release is **v0.1.1**. It adds an automatically registered Smarther
+The current release is **v0.1.2**. It includes an automatically registered Smarther
 sidebar panel with one thermostat card per visible device, temperature and
 humidity history charts, recorded heating statistics and a Boost countdown.
 See [panel guide](docs/DASHBOARD.md).
@@ -105,8 +105,9 @@ compatible native version for rollback.
 After normal integration setup, **Smarther** appears in the sidebar and shows all
 visible configured thermostats, using their actual entity registry IDs. Each
 widget includes current/target temperature, mode, program, Boost 30/60/90 and
-cancel, humidity, heating, Boost end and live/stale telemetry. Controls respect
-read-only and fresh-telemetry policy. Opening the panel sends no commands.
+cancel, humidity, heating, Boost end and live/stale telemetry. Commands require
+controls to be enabled and a reported thermostat state; older or retained data
+are flagged but do not by themselves block commands. Opening the panel sends no commands.
 
 The panel uses a compact thermostat face inspired by the original Smarther
 card: a large temperature dial, discreet setpoint controls, a narrow Boost
