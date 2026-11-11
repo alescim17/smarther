@@ -26,10 +26,14 @@
   "options": {
     "step": {
       "init": {
-        "title": "Control policy",
-        "description": "Leave disabled until the remote bridge and any other command writers have been checked. Commands require recent non-retained telemetry.",
+        "title": "Controls and Smarther panel",
+        "description": "The Smarther panel appears automatically in the sidebar. You can hide this thermostat using the flag below; hiding all thermostats also removes the menu entry. Visibility does not enable commands. Allow commands only after verifying the remote bridge, recent telemetry and absence of competing command writers.",
         "data": {
-          "enable_controls": "Allow thermostat control commands (advanced)"
+          "enable_controls": "Allow thermostat commands",
+          "show_panel": "Show this thermostat in the Smarther panel"
+        },
+        "data_description": {
+          "show_panel": "On by default. No resources, YAML or dashboard creation required."
         }
       }
     }

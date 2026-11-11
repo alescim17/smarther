@@ -26,10 +26,14 @@
   "options": {
     "step": {
       "init": {
-        "title": "Autorizzazione comandi",
-        "description": "Abilita solo dopo aver verificato il routing del bridge, la telemetria recente e l'assenza di altri sistemi che inviano comandi.",
+        "title": "Comandi e pannello Smarther",
+        "description": "Il pannello Smarther appare automaticamente nella barra laterale. Puoi nascondere questo termostato con il flag qui sotto; nascondendo tutti i termostati scompare anche la voce nel menu. La visibilità non abilita comandi. Consenti comandi solo dopo aver verificato bridge remoto, telemetria recente e assenza di altri sistemi di controllo.",
         "data": {
-          "enable_controls": "Consenti comandi al termostato"
+          "enable_controls": "Consenti comandi al termostato",
+          "show_panel": "Mostra questo termostato nel pannello Smarther"
+        },
+        "data_description": {
+          "show_panel": "Attivo per impostazione predefinita. Non richiede risorse, YAML o creazione di dashboard."
         }
       }
     }

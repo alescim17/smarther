@@ -10,6 +10,7 @@ from homeassistant.components.climate import (
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.exceptions import HomeAssistantError
 
+from .const import MAX_CONTROL_AGE_SECONDS
 from .entity import SmartherMqttEntity
 
 
@@ -72,6 +73,11 @@ class SmartherThermostat(SmartherMqttEntity, ClimateEntity):
             "vendor_mode": self.hub.state.mode,
             "remote_bridge_verified": False,
             "controls_enabled": not self.hub.read_only,
+            "last_live_message": (
+                self.hub.last_live.isoformat() if self.hub.last_live else None
+            ),
+            "last_message_retained": self.hub.last_retained,
+            "control_max_age_seconds": MAX_CONTROL_AGE_SECONDS,
         }
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
@@ -92,3 +98,4 @@ class SmartherThermostat(SmartherMqttEntity, ClimateEntity):
 
     async def async_turn_off(self) -> None:
         await self.hub.async_set_mode("off")
+

@@ -9,12 +9,14 @@
   ],
   "config_flow": true,
   "dependencies": [
-    "mqtt"
+    "http",
+    "mqtt",
+    "panel_custom"
   ],
   "documentation": "https://github.com/alescim17/smarther",
   "integration_type": "device",
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/alescim17/smarther/issues",
   "requirements": [],
-  "version": "0.1.0"
+  "version": "0.1.1"
 }

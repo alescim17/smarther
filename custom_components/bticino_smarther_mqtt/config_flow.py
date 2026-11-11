@@ -11,8 +11,10 @@ import voluptuous as vol
 
 from .const import (
     CONF_ENABLE_CONTROLS,
+    CONF_SHOW_PANEL,
     CONF_TOPIC_PREFIX,
     DEFAULT_ENABLE_CONTROLS,
+    DEFAULT_SHOW_PANEL,
     DEFAULT_NAME,
     DOMAIN,
 )
@@ -44,7 +46,10 @@ class SmartherMqttConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         return self.async_create_entry(
                             title=name,
                             data={CONF_TOPIC_PREFIX: prefix, CONF_NAME: name},
-                            options={CONF_ENABLE_CONTROLS: DEFAULT_ENABLE_CONTROLS},
+                            options={
+                                CONF_ENABLE_CONTROLS: DEFAULT_ENABLE_CONTROLS,
+                                CONF_SHOW_PANEL: DEFAULT_SHOW_PANEL,
+                            },
                         )
                     errors[CONF_NAME] = "invalid_name"
         schema = vol.Schema(
@@ -70,11 +75,11 @@ class SmartherMqttConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class SmartherMqttOptionsFlow(config_entries.OptionsFlow):
-    """Write policy can only be changed by an explicit user options action."""
+    """Keep panel visibility and thermostat command consent separate."""
 
     async def async_step_init(self, user_input=None):
         if user_input is not None:
-            return self.async_create_entry(data=user_input)
+            return self.async_create_entry(data={**self.config_entry.options, **user_input})
         schema = vol.Schema(
             {
                 vol.Required(
@@ -83,6 +88,13 @@ class SmartherMqttOptionsFlow(config_entries.OptionsFlow):
                         CONF_ENABLE_CONTROLS, DEFAULT_ENABLE_CONTROLS
                     ),
                 ): bool,
+                vol.Required(
+                    CONF_SHOW_PANEL,
+                    default=self.config_entry.options.get(
+                        CONF_SHOW_PANEL, DEFAULT_SHOW_PANEL
+                    ),
+                ): bool,
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)
+
