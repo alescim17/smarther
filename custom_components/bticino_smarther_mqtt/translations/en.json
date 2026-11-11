@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Set up a Smarther thermostat",
-        "description": "The MQTT bridge is a one-time prerequisite. [First-time setup guide](https://github.com/alescim17/smarther/blob/main/docs/FIRST_TIME_SETUP.md). Enter only the name and device topic prefix; never paste vendor credentials here. Setup does not send thermostat commands.",
+        "description": "The MQTT bridge is a one-time prerequisite. [First-time setup guide]({setup_guide_url}). Enter only the name and device topic prefix; never paste vendor credentials here. Setup does not send thermostat commands.",
         "data": {
           "name": "Thermostat name",
           "topic_prefix": "MQTT device topic prefix"
