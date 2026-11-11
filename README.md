@@ -105,9 +105,7 @@ responsible for reviewing and maintaining the released integration.
 This project builds on the earlier community-developed YAML/MQTT Smarther
 solution. **Original YAML/MQTT project contributors:** Daniele (GitHub
 username: `Danye`). Other original collaborators will be acknowledged as
-they confirm their preferred credit. These acknowledgments recognize the
-earlier work; they do not imply authorship of individual commits in the
-rewritten native integration.
+they confirm their preferred credit.
 
 ## Help and attribution
 
