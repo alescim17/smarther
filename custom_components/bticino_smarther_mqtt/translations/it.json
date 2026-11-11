@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Configura un termostato Smarther",
-        "description": "Il bridge MQTT va configurato una sola volta. [Guida illustrata alla prima configurazione](https://github.com/alescim17/smarther/blob/main/docs/FIRST_TIME_SETUP.md). Inserisci solo nome e prefisso MQTT, mai le credenziali del cloud. Questa procedura non invia comandi al termostato.",
+        "description": "Il bridge MQTT va configurato una sola volta. [Guida illustrata alla prima configurazione]({setup_guide_url}). Inserisci solo nome e prefisso MQTT, mai le credenziali del cloud. Questa procedura non invia comandi al termostato.",
         "data": {
           "name": "Nome termostato",
           "topic_prefix": "Prefisso topic MQTT del dispositivo"
