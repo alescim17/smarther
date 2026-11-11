@@ -26,11 +26,19 @@
   "options": {
     "step": {
       "init": {
-        "title": "Autorizzazione comandi",
-        "description": "Abilita solo dopo aver verificato il routing del bridge, la telemetria recente e l'assenza di altri sistemi che inviano comandi.",
+        "title": "Comandi e dashboard",
+        "description": "Consenti i comandi solo dopo aver verificato bridge remoto, telemetria recente e assenza di altri sistemi di controllo. Gli strumenti dashboard sono indipendenti: rendono questo termostato selezionabile nella procedura guidata e non creano dashboard né abilitano comandi.",
         "data": {
-          "enable_controls": "Consenti comandi al termostato"
+          "enable_controls": "Consenti comandi al termostato",
+          "enable_dashboard": "Rendi disponibile questo termostato per creare una dashboard Smarther"
+        },
+        "data_description": {
+          "enable_dashboard": "Disattivato per impostazione predefinita. La creazione avviene solo con una tua azione nelle Dashboard di Home Assistant. Disattivarlo non modifica le dashboard esistenti."
         }
+      },
+      "dashboard": {
+        "title": "Crea una dashboard Smarther",
+        "description": "Premi Invia per salvare questa opzione, poi segui la [guida dashboard]({dashboard_guide_url}).\n\n1. In [Risorse]({resources_url}), aggiungi `{resource_url}` una sola volta come **Modulo JavaScript**. Se la risorsa esiste già, riusala.\n2. Ricarica la pagina, apri [Dashboard]({dashboards_url}), scegli **Aggiungi dashboard → Dashboard della community → Smarther** e seleziona questo termostato.\n3. Scegli nome, URL e visibilità nella barra laterale. Apri la dashboard creata; usa **Prendi il controllo** per modificarne il layout.\n\nLe Options non creano o aggiornano dashboard. Riusare una dashboard esistente evita copie. La guida include anche un’alternativa con sole card native se la risorsa non è disponibile. Nessun comando viene inviato dalla procedura."
       }
     }
   }

@@ -62,8 +62,12 @@ does not prove a physical command was applied. Off requests protection/antifreez
 3. Confirm Home Assistant's MQTT integration and fresh, non-retained device state.
 4. Install and configure Smarther with just the device name and exact topic
    prefix; new entries start **read-only**.
-5. [Add an optional dashboard manually](docs/DASHBOARD.md), using standard
-   Home Assistant cards; no dashboard is created automatically.
+5. [Create an optional Smarther dashboard](docs/DASHBOARD.md). Enable the
+   dashboard tools in Options, register the bundled JavaScript module once,
+   then choose **Smarther** under Home Assistant's **Community dashboards**.
+   The dashboard tools are **off by default**; installation and update do not
+   create a dashboard or enable thermostat commands. A native-only manual
+   example remains available.
 
 ## Install
 
@@ -89,10 +93,27 @@ options, entity IDs, device ID and Recorder history; do not delete and re-add
 the thermostat for a normal update. Back up first and retain a previous
 compatible native version for rollback.
 
-The [optional dashboard example](custom_components/bticino_smarther_mqtt/examples/dashboard.yaml)
-uses built-in cards. There is **no automatic dashboard toggle** in the native
-integration: see [where the dashboard appears and how to import it](docs/DASHBOARD.md).
-Install/update never creates or replaces user dashboards.
+## Optional dashboard and climate widget
+
+The opt-in dashboard tools prepare a dashboard for **one selected Smarther
+installation**, resolving its actual entity registry IDs. Home Assistant's
+standard creation dialog lets you choose its title and sidebar visibility.
+The default widget combines a native **Tile** climate card with bundled
+Smarther features: temperature and mode controls, program selection, Boost
+30/60/90 and cancel, humidity, heating state, Boost end and telemetry freshness.
+The additional controls respect the existing read-only and fresh-telemetry
+policy. Creating or opening a dashboard sends no thermostat commands.
+
+Choose **Built-in cards only** if you prefer a dashboard without custom
+features. The [bundled manual example](custom_components/bticino_smarther_mqtt/examples/dashboard.yaml)
+also uses only built-in cards and starts with a read-only layout. No
+third-party card dependency is required.
+
+Dashboard creation is an explicit operation in Home Assistant's UI, not a
+side effect of enabling an option. Use **Take control** to save the generated
+layout as a dashboard you can edit. Once saved, updates and disabling the
+tools preserve your layout. See the [dashboard guide](docs/DASHBOARD.md) for
+resource setup, multiple devices, duplicate avoidance and the manual fallback.
 
 ## Development and acknowledgments
 
@@ -116,3 +137,4 @@ MQTT payloads. A broker connection alone does not prove the vendor bridge is liv
 [MIT licensed](LICENSE), preserving [attribution and provenance](docs/PROVENANCE.md).
 The geometric icon is original project artwork. This community project is not
 affiliated with or endorsed by BTicino, Legrand, Netatmo or Home Assistant.
+

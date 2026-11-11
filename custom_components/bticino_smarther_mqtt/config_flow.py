@@ -11,8 +11,10 @@ import voluptuous as vol
 
 from .const import (
     CONF_ENABLE_CONTROLS,
+    CONF_ENABLE_DASHBOARD,
     CONF_TOPIC_PREFIX,
     DEFAULT_ENABLE_CONTROLS,
+    DEFAULT_ENABLE_DASHBOARD,
     DEFAULT_NAME,
     DOMAIN,
 )
@@ -44,7 +46,10 @@ class SmartherMqttConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         return self.async_create_entry(
                             title=name,
                             data={CONF_TOPIC_PREFIX: prefix, CONF_NAME: name},
-                            options={CONF_ENABLE_CONTROLS: DEFAULT_ENABLE_CONTROLS},
+                            options={
+                                CONF_ENABLE_CONTROLS: DEFAULT_ENABLE_CONTROLS,
+                                CONF_ENABLE_DASHBOARD: DEFAULT_ENABLE_DASHBOARD,
+                            },
                         )
                     errors[CONF_NAME] = "invalid_name"
         schema = vol.Schema(
@@ -70,11 +75,14 @@ class SmartherMqttConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class SmartherMqttOptionsFlow(config_entries.OptionsFlow):
-    """Write policy can only be changed by an explicit user options action."""
+    """Keep dashboard discovery and thermostat command consent separate."""
 
     async def async_step_init(self, user_input=None):
         if user_input is not None:
-            return self.async_create_entry(data=user_input)
+            self._options = {**self.config_entry.options, **user_input}
+            if self._options.get(CONF_ENABLE_DASHBOARD, DEFAULT_ENABLE_DASHBOARD):
+                return await self.async_step_dashboard()
+            return self.async_create_entry(data=self._options)
         schema = vol.Schema(
             {
                 vol.Required(
@@ -83,6 +91,30 @@ class SmartherMqttOptionsFlow(config_entries.OptionsFlow):
                         CONF_ENABLE_CONTROLS, DEFAULT_ENABLE_CONTROLS
                     ),
                 ): bool,
+                vol.Required(
+                    CONF_ENABLE_DASHBOARD,
+                    default=self.config_entry.options.get(
+                        CONF_ENABLE_DASHBOARD, DEFAULT_ENABLE_DASHBOARD
+                    ),
+                ): bool,
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)
+
+    async def async_step_dashboard(self, user_input=None):
+        """Explain the explicit supported UI route; never create a dashboard."""
+        if user_input is not None:
+            return self.async_create_entry(data=self._options)
+        return self.async_show_form(
+            step_id="dashboard",
+            data_schema=vol.Schema({}),
+            description_placeholders={
+                "resource_url": "/bticino_smarther_mqtt/smarther-dashboard.js",
+                "resources_url": "/config/lovelace/resources",
+                "dashboards_url": "/config/lovelace/dashboards",
+                "dashboard_guide_url": (
+                    "https://github.com/alescim17/smarther/blob/main/docs/DASHBOARD.md"
+                ),
+            },
+        )
+

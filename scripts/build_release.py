@@ -10,11 +10,11 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "bticino_smarther_mqtt"
-TOP = {"__init__.py", "button.py", "climate.py", "config_flow.py", "const.py",
+TOP = {"__init__.py", "button.py", "climate.py", "config_flow.py", "const.py", "dashboard.py",
        "diagnostics.py", "entity.py", "mqtt_bridge.py", "protocol.py", "select.py",
        "sensor.py", "manifest.json", "strings.json", "LICENSE", "NOTICE.md"}
 EXTRA = {"translations/en.json", "translations/it.json", "brand/icon.png",
-         "brand/icon@2x.png", "examples/dashboard.yaml"}
+         "brand/icon@2x.png", "examples/dashboard.yaml", "frontend/smarther-dashboard.js"}
 ALLOWED = TOP | EXTRA
 
 
@@ -47,7 +47,7 @@ def build(root: Path, output: Path, tag: str | None = None) -> Path:
         if relative not in ALLOWED:
             raise ValueError("Unexpected file in component: " + relative)
         found.add(relative)
-        if path.suffix in {".py", ".json", ".md", ".yaml", ".svg"}:
+        if path.suffix in {".py", ".js", ".json", ".md", ".yaml", ".svg"}:
             if re.search(rb"(?:gh[pousr]_[A-Za-z0-9_]{15,}|github_pat_[A-Za-z0-9_]{15,}|-----BEGIN [A-Z ]*PRIVATE KEY)", path.read_bytes()):
                 raise ValueError("Potential credential in release source")
     if found != ALLOWED:
@@ -72,3 +72,4 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     print(build(ROOT, args.output, args.tag))
+

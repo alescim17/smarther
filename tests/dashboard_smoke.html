@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smarther isolated feature smoke</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --primary-text-color: #172b3a;
+      --secondary-text-color: #526b7b;
+      --primary-color: #087c9c;
+      --text-primary-color: #fff;
+      --card-background-color: #fff;
+      --secondary-background-color: #edf3f6;
+      --divider-color: #c8d7df;
+      --success-color: #198653;
+      --warning-color: #be7900;
+      --error-color: #b62435;
+      --feature-height: 42px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f1f6f8; color: var(--primary-text-color); font: 15px/1.5 system-ui, sans-serif; }
+    main { max-width: 1050px; margin: auto; padding: 24px 16px 40px; }
+    h1 { font-size: 26px; margin: 0; }
+    h2 { font-size: 18px; margin: 0 0 12px; }
+    p { margin: 8px 0 16px; }
+    .muted { color: var(--secondary-text-color); }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; }
+    button { min-height: 42px; border: 1px solid var(--divider-color); border-radius: 9px; background: white; color: inherit; padding: 8px 13px; font: inherit; cursor: pointer; }
+    button[aria-pressed="true"] { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+    .grid { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 20px; align-items: start; }
+    .panel { background: white; border: 1px solid var(--divider-color); border-radius: 16px; padding: 16px; min-width: 0; }
+    .fixture { width: 320px; padding: 14px; }
+    .eyebrow { margin: 0 0 8px; color: var(--secondary-text-color); text-transform: uppercase; letter-spacing: .07em; font-size: 10px; font-weight: 700; }
+    #feature-host { display: grid; gap: 8px; }
+    #fixture-state { font-size: 13px; color: var(--secondary-text-color); margin: 0 0 14px; }
+    #scenario-summary { margin: 12px 0 0; font-size: 12px; color: var(--secondary-text-color); }
+    #report, #service-log { padding-left: 21px; margin: 8px 0; }
+    #report li { margin: 6px 0; }
+    .pass { color: #146c43; }
+    .fail { color: var(--error-color); font-weight: 600; }
+    .count { display: inline-block; padding: 2px 8px; background: #e9f2f6; border-radius: 6px; font-weight: 700; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px; background: #f2f6f8; border-radius: 8px; font-size: 12px; max-height: 280px; overflow: auto; }
+    .editor-panel { margin-top: 20px; }
+    #editor-host { max-width: 720px; }
+    #service-log { font-size: 12px; overflow-wrap: anywhere; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } .fixture { margin: auto; } main { padding: 16px 10px 30px; } }
+    @media (max-width: 340px) { .fixture { width: 100%; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Smarther feature smoke</h1>
+    <p class="muted">Isolated DOM fixture with synthetic Home Assistant data. The shell below is <strong>not the native HA Tile</strong>. No real Home Assistant, broker or thermostat is connected.</p>
+
+    <nav class="controls" aria-label="Synthetic telemetry scenarios">
+      <button id="read-only" type="button" aria-pressed="true">Read-only</button>
+      <button id="live-controls" type="button" aria-pressed="false">Live controls</button>
+      <button id="stale" type="button" aria-pressed="false">Stale</button>
+      <button id="retained-only" type="button" aria-pressed="false">Retained only</button>
+      <button id="missing-entities" type="button" aria-pressed="false">Missing entities</button>
+      <button id="italian" type="button" aria-pressed="false">Italian</button>
+    </nav>
+
+    <div class="grid">
+      <section class="panel fixture" aria-label="Isolated 320 pixel feature fixture">
+        <p class="eyebrow">Synthetic fixture · 320px shell</p>
+        <h2 id="fixture-title">Living room</h2>
+        <p id="fixture-state">Measured 20.7 °C · Target 21.5 °C</p>
+        <div id="feature-host"></div>
+        <p id="scenario-summary"></p>
+      </section>
+      <section class="panel">
+        <h2>Automatic source smoke</h2>
+        <ul id="report" aria-live="polite"></ul>
+        <p>Mock service calls: <span id="service-count" class="count">0</span> · Read-only registry requests: <span id="registry-count" class="count">0</span></p>
+        <p class="muted">Scenario buttons change only fixture data. A control click can append a mock service call below; no command is sent anywhere and no physical outcome is simulated.</p>
+        <ol id="service-log" aria-live="polite"></ol>
+      </section>
+    </div>
+
+    <section class="panel editor-panel">
+      <h2>Dashboard editor fixture</h2>
+      <p class="muted">Two enabled thermostats use distinct renamed entity IDs. A third entry is deliberately disabled. Selecting an entry emits a configuration snapshot only.</p>
+      <div id="editor-host"></div>
+      <h2 style="margin-top:20px">Selected snapshot</h2>
+      <pre id="selected-config" aria-live="polite">No thermostat selected.</pre>
+    </section>
+  </main>
+
+  <script src="../custom_components/bticino_smarther_mqtt/frontend/smarther-dashboard.js"></script>
+  <script>
+    (async () => {
+      "use strict";
+      const firstIds = {
+        climate: "climate.living_room_2", program: "select.renamed_week_plan",
+        humidity: "sensor.living_humidity_2", heating: "sensor.boiler_activity",
+        active_program: "sensor.current_schedule", boost_end: "sensor.heating_until",
+        last_message: "sensor.last_room_message", boost_30: "button.quick_warm_30",
+        boost_60: "button.quick_warm_60", boost_90: "button.quick_warm_90",
+        cancel_boost: "button.resume_schedule",
+      };
+      const secondIds = {
+        climate: "climate.study_renamed", program: "select.study_week_plan",
+        humidity: "sensor.study_humidity", heating: "sensor.study_load",
+        active_program: "sensor.study_schedule", boost_end: "sensor.study_boost_end",
+        last_message: "sensor.study_message", boost_30: "button.study_30",
+        boost_60: "button.study_60", boost_90: "button.study_90",
+        cancel_boost: "button.study_resume",
+      };
+      const fixtureEntries = [
+        { entry_id: "entry-living", title: "Living room", enabled: true, device_id: "device-living", entities: firstIds },
+        { entry_id: "entry-study", title: "Study", enabled: true, device_id: "device-study", entities: secondIds },
+        { entry_id: "entry-disabled", title: "Disabled guest room", enabled: false, device_id: "device-guest", entities: { climate: "climate.guest_room" } },
+      ];
+      const fixtureRows = ["temperature", "mode", "program", "boost", "status", "telemetry", "boost_end"];
+      const services = [];
+      const registryRequests = [];
+      let scenario = "read-only";
+      let language = "en";
+      let activeHass;
+      let editor;
+      let selectedConfig;
+      const featureNodes = [];
+
+      function report(ok, label) {
+        const item = document.createElement("li");
+        item.className = ok ? "pass" : "fail";
+        item.textContent = `${ok ? "PASS" : "FAIL"} — ${label}`;
+        document.getElementById("report").append(item);
+        return ok;
+      }
+
+      function assert(condition, label) {
+        if (!condition) throw new Error(label);
+        report(true, label);
+      }
+
+      function makeHass() {
+        const now = Date.now();
+        const states = {};
+        const entities = {};
+        const state = (id, value, attributes = {}) => {
+          states[id] = { entity_id: id, state: value, attributes, last_changed: new Date(now).toISOString(), last_updated: new Date(now).toISOString() };
+        };
+        for (const entry of fixtureEntries) {
+          for (const id of Object.values(entry.entities)) entities[id] = { entity_id: id, device_id: entry.device_id, platform: "bticino_smarther_mqtt" };
+          const ids = entry.entities;
+          state(ids.climate, "heat", {
+            source: "bticino_mqtt_legacy_bridge", friendly_name: entry.title,
+            current_temperature: 20.7, temperature: 21.5, min_temp: 8, max_temp: 30,
+            target_temp_step: 0.1, hvac_modes: ["off", "heat", "auto"],
+            hvac_action: "heating", vendor_mode: "BOOST",
+            controls_enabled: scenario !== "read-only", control_max_age_seconds: 1200,
+            last_live_message: scenario === "retained-only" ? null : new Date(now - (scenario === "stale" ? 1500000 : 45000)).toISOString(),
+            last_message_retained: scenario === "retained-only" || scenario === "stale",
+          });
+          if (!ids.program) continue;
+          state(ids.program, "Program 1: Weekdays", { options: ["Default", "Program 1: Weekdays", "Program 2: Weekend"] });
+          state(ids.humidity, "48", { unit_of_measurement: "%" });
+          state(ids.heating, "active");
+          state(ids.active_program, "Weekdays");
+          state(ids.boost_end, new Date(now + 2700000).toISOString(), { device_class: "timestamp" });
+          state(ids.last_message, new Date(now - 10000).toISOString(), { device_class: "timestamp" });
+          for (const key of ["boost_30", "boost_60", "boost_90", "cancel_boost"]) state(ids[key], new Date(now - 60000).toISOString());
+        }
+        if (scenario === "missing-entities") {
+          for (const key of ["program", "humidity", "boost_60", "boost_90", "cancel_boost"]) delete states[firstIds[key]];
+        }
+        return {
+          language, states, entities, panels: {},
+          config: { time_zone: "Europe/Rome", location_name: "Isolated fixture" },
+          formatEntityState(entityState) {
+            if (entityState.attributes.device_class === "timestamp") {
+              return new Intl.DateTimeFormat(language, { timeStyle: "short", dateStyle: "short", timeZone: "Europe/Rome" }).format(new Date(entityState.state));
+            }
+            return `${entityState.state}${entityState.attributes.unit_of_measurement ? ` ${entityState.attributes.unit_of_measurement}` : ""}`;
+          },
+          async callWS(message) {
+            if (message.type !== "bticino_smarther_mqtt/dashboard_info") throw new Error("Unexpected fixture WebSocket request");
+            registryRequests.push({ ...message });
+            document.getElementById("registry-count").textContent = registryRequests.length;
+            return { entries: structuredClone(fixtureEntries) };
+          },
+          async callService(domain, service, data) {
+            const call = { domain, service, data: structuredClone(data) };
+            services.push(call);
+            document.getElementById("service-count").textContent = services.length;
+            const item = document.createElement("li");
+            item.textContent = JSON.stringify(call);
+            document.getElementById("service-log").append(item);
+          },
+        };
+      }
+
+      function updateScenario() {
+        activeHass = makeHass();
+        for (const node of featureNodes) node.hass = activeHass;
+        if (editor) editor.hass = activeHass;
+        for (const id of ["read-only", "live-controls", "stale", "retained-only", "missing-entities"]) {
+          document.getElementById(id).setAttribute("aria-pressed", String(id === scenario));
+        }
+        document.getElementById("italian").setAttribute("aria-pressed", String(language === "it"));
+        document.getElementById("scenario-summary").textContent = `Scenario: ${scenario} · Language: ${language} · Synthetic data only`;
+      }
+
+      try {
+        const strategy = customElements.get("ll-strategy-dashboard-smarther");
+        assert(Boolean(strategy && customElements.get("smarther-feature")), "Dashboard strategy and feature elements loaded");
+        activeHass = makeHass();
+        const config = { type: "custom:smarther", device: structuredClone(fixtureEntries[0]) };
+        const generated = await strategy.generate(config, activeHass);
+        const climateCard = generated.views[0].cards[0];
+        assert(climateCard.type === "tile" && climateCard.entity === firstIds.climate, "Strategy uses a native Tile and the renamed climate ID");
+        assert(climateCard.features.length === 7 && climateCard.features.every((feature, index) => feature.type === "custom:smarther-feature" && feature.row === fixtureRows[index]), "Seven supported custom-feature rows are configured");
+        assert(climateCard.features.every((feature) => JSON.stringify(feature.entities) === JSON.stringify(firstIds)), "All custom rows retain the exact registry entity map");
+        const native = await strategy.generate({ ...config, native_only: true }, activeHass);
+        assert(native.views[0].cards[0].type === "tile" && !JSON.stringify(native).includes("custom:"), "Native-only fallback contains no custom feature or strategy");
+        assert(JSON.stringify(native).includes(firstIds.humidity) && JSON.stringify(native).includes(firstIds.last_message), "Native fallback uses the selected thermostat's diagnostic IDs");
+        assert(window.customStrategies.filter((item) => item.type === "smarther" && item.strategyType === "dashboard").length === 1 && window.customCardFeatures.filter((item) => item.type === "smarther-feature").length === 1, "Exactly one strategy and one feature metadata registration");
+
+        for (const featureConfig of climateCard.features) {
+          const node = document.createElement("smarther-feature");
+          node.dataset.row = featureConfig.row;
+          node.setConfig(featureConfig);
+          node.context = { entity_id: firstIds.climate };
+          node.hass = activeHass;
+          document.getElementById("feature-host").append(node);
+          featureNodes.push(node);
+        }
+        editor = strategy.getConfigElement();
+        editor.setConfig({ type: "custom:smarther" });
+        editor.addEventListener("config-changed", (event) => {
+          selectedConfig = event.detail.config;
+          document.getElementById("selected-config").textContent = JSON.stringify(selectedConfig, null, 2);
+        });
+        document.getElementById("editor-host").append(editor);
+        editor.hass = activeHass;
+        updateScenario();
+        await Promise.resolve();
+        assert(featureNodes.every((node) => node.shadowRoot.querySelectorAll("button,input,select").length === 0), "Initial read-only fixture renders no command controls");
+        const selector = editor.shadowRoot.querySelector("select");
+        assert(selector && selector.options.length === 3 && !selector.textContent.includes("Disabled guest room"), "Editor lists two enabled entries and excludes the disabled entry");
+        assert(services.length === 0, "Source generation, rendering and registry discovery send zero service calls");
+
+        for (const id of ["read-only", "live-controls", "stale", "retained-only", "missing-entities"]) {
+          document.getElementById(id).addEventListener("click", () => { scenario = id; updateScenario(); });
+        }
+        document.getElementById("italian").addEventListener("click", () => {
+          language = language === "it" ? "en" : "it";
+          updateScenario();
+        });
+        // Expose observations for an external browser harness; never real services.
+        window.smartherSmokeFixture = { services, registryRequests, get selectedConfig() { return selectedConfig; } };
+      } catch (error) {
+        report(false, error.message || String(error));
+      }
+    })();
+  </script>
+</body>
+</html>

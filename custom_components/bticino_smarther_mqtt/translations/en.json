@@ -26,11 +26,19 @@
   "options": {
     "step": {
       "init": {
-        "title": "Control policy",
-        "description": "Only enable after verifying remote bridge routing, fresh telemetry and absence of competing command writers.",
+        "title": "Controls and dashboard",
+        "description": "Allow commands only after verifying the remote bridge, recent telemetry and absence of competing command writers. Dashboard tools are separate: they make this thermostat selectable in the guided builder, without creating dashboards or enabling commands.",
         "data": {
-          "enable_controls": "Allow thermostat commands"
+          "enable_controls": "Allow thermostat commands",
+          "enable_dashboard": "Make this thermostat available to create a Smarther dashboard"
+        },
+        "data_description": {
+          "enable_dashboard": "Off by default. Creation requires your action in Home Assistant Dashboards. Turning this off leaves existing dashboards unchanged."
         }
+      },
+      "dashboard": {
+        "title": "Create a Smarther dashboard",
+        "description": "Select Submit to save this option, then follow the [dashboard guide]({dashboard_guide_url}).\n\n1. In [Resources]({resources_url}), add `{resource_url}` once as a **JavaScript module**. Reuse the resource if it is already listed.\n2. Reload the page, open [Dashboards]({dashboards_url}), choose **Add dashboard → Community dashboards → Smarther**, and select this thermostat.\n3. Choose a name, URL and sidebar visibility. Open the new dashboard; use **Take control** to edit its layout.\n\nOptions do not create or update dashboards. Reuse an existing dashboard to avoid copies. The guide also includes a native-card fallback when the resource is unavailable. This process sends no thermostat commands."
       }
     }
   }

@@ -1,6 +1,10 @@
 {
   "domain": "bticino_smarther_mqtt",
   "name": "BTicino Smarther MQTT",
+  "after_dependencies": [
+    "frontend",
+    "http"
+  ],
   "categories": [
     "climate.thermostats_heating"
   ],
