@@ -13,7 +13,7 @@ const TEXT = {
     cancel: "Cancel", cancelLabel: "Cancel Boost and resume the schedule",
     humidity: "Humidity", heating: "Heating", idle: "Idle", unknown: "Unknown",
     unavailable: "Unavailable", readOnly: "Read-only", stale: "Stale telemetry",
-    fresh: "Live telemetry", noLive: "Waiting for live telemetry", retained: "Retained snapshot only",
+    fresh: "Live telemetry", noLive: "Waiting for live telemetry", retained: "Retained snapshot only", notLive: "Telemetry not live",
     end: "Boost ends", noBoost: "No active Boost", ago: "min ago", pending: "Sending…",
     failed: "Command refused or failed. Check telemetry and integration options.",
     invalid: "Check the selected value before applying.",
@@ -28,7 +28,7 @@ const TEXT = {
     cancel: "Annulla", cancelLabel: "Annulla Boost e riprendi il programma",
     humidity: "Umidità", heating: "Riscaldamento", idle: "Inattivo", unknown: "Sconosciuto",
     unavailable: "Non disponibile", readOnly: "Sola lettura", stale: "Telemetria obsoleta",
-    fresh: "Telemetria live", noLive: "In attesa di telemetria live", retained: "Solo dati retained",
+    fresh: "Telemetria live", noLive: "In attesa di telemetria live", retained: "Solo dati retained", notLive: "Telemetria non live",
     end: "Fine Boost", noBoost: "Nessun Boost attivo", ago: "min fa", pending: "Invio…",
     failed: "Comando rifiutato o non riuscito. Controlla telemetria e opzioni dell’integrazione.",
     invalid: "Controlla il valore selezionato prima di applicarlo.",
@@ -359,7 +359,7 @@ class SmartherThermostat extends HTMLElement {
     humidity.append(icon("humidity"), document.createTextNode(this._sensor("humidity")));
     const live = telemetry(state), notice = element("span", undefined, "live");
     notice.append(element("span", undefined, `dot${live.key === "fresh" ? " fresh" : ""}`), document.createTextNode(
-      `${status === "readOnly" ? t.readOnly : t[live.key]}${live.minutes !== undefined ? ` · ${live.minutes} ${t.ago}` : ""}`));
+      `${status === "readOnly" ? t.readOnly : live.key === "retained" ? t.notLive : t[live.key]}${live.minutes !== undefined ? ` · ${live.minutes} ${t.ago}` : ""}`));
     footer.append(humidity, notice); shell.append(head, body, footer);
     this.shadowRoot.replaceChildren(element("style", FACE_STYLE), shell);
   }
@@ -409,7 +409,7 @@ class SmartherThermostat extends HTMLElement {
       const button = this._button(t[mode], () => this._command("climate", "set_hvac_mode", this._ids.climate, { hvac_mode: mode }));
       button.setAttribute("aria-pressed", String(state?.state === mode)); button.disabled = status !== "ready" || this._busy || !attr.hvac_modes?.includes(mode); modes.append(button);
     }
-    view.append(modes); if (status !== "ready") view.append(element("p", t[status], "blocked"));
+    view.append(modes);
   }
   _boost(view, state, status) {
     const t = words(this._hass); view.append(element("h3", "Boost"), element("p", t.boostHelp, "blocked"));
@@ -420,7 +420,6 @@ class SmartherThermostat extends HTMLElement {
     const cancel = this._button(t.cancelLabel, () => this._command("button", "press", this._ids.cancel_boost), "secondary");
     cancel.disabled = status !== "ready" || this._busy || state?.attributes.vendor_mode !== "BOOST" || !controlAvailable(this._hass.states[this._ids.cancel_boost]);
     view.append(choices, start, cancel, element("p", state?.attributes.vendor_mode === "BOOST" ? `${t.end}: ${this._sensor("boost_end")}` : t.noBoost, "blocked"));
-    if (status !== "ready") view.append(element("p", t[status], "blocked"));
   }
   _program(view, status) {
     const t = words(this._hass), state = this._hass.states[this._ids.program];
@@ -431,7 +430,6 @@ class SmartherThermostat extends HTMLElement {
     select.disabled = status !== "ready" || this._busy;
     const apply = this._button(this._busy ? t.pending : t.apply, () => this._command("select", "select_option", this._ids.program, { option: select.value }), "apply");
     apply.disabled = status !== "ready" || this._busy; view.append(select, apply);
-    if (status !== "ready") view.append(element("p", t[status], "blocked"));
   }
   _info(view, state, status) {
     const t = words(this._hass), details = element("dl"); view.append(element("h3", t.info));
