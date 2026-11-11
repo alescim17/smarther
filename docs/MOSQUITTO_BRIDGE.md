@@ -54,9 +54,20 @@ template itself is not proof that a bridge is connected.
 
 The initial slash in `/cro/...` is significant. MQTT treats `/cro/x` and `cro/x` as different topics.
 
-### Obtaining vendor credentials
+### Obtaining vendor credentials and identifying your topic
 
-The remote MQTT connection requires credentials supported by the vendor's service. The previous community documentation mentioned retrieving credentials from diagnostic logs in certain versions of the mobile application. **That method is not verified for current applications or devices**, so it must not be presented as a general installation guarantee.
+For the **historical Android Thermostat app log procedure** (including the
+`Documents/Chronotermostat/` folder, `Eliot_Thermostat_PrtLogYYYY_MM_DD.txt`,
+and `TryConnectMQTT` / `SubscribeMQTT` fields), see the
+[illustrated, sanitized step-by-step guide](ANDROID_APP_LOGS.md).
+
+The original community instructions were for some older app versions; **the
+log location is not verified for current Android app releases**. Do not
+treat it as a guaranteed supported retrieval path. The remote broker
+credentials belong only in the **private Mosquitto bridge** configuration,
+not in this integration's Home Assistant config flow. In the HA UI use
+only the exact `/cro/plantid/EXAMPLE/gwid/EXAMPLE` prefix, **without
+the historical `/#` wildcard**.
 
 Do not post credentials, real plant or gateway identifiers, client IDs, or complete bridge files in issues or logs. If a password is exposed, rotate it using a legitimate, working procedure and update the bridge in a controlled maintenance window.
 
