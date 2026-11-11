@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Set up a Smarther thermostat",
-        "description": "Configure an existing MQTT bridge first. No device commands are sent during setup.",
+        "description": "The MQTT bridge is a one-time prerequisite. [First-time setup guide]({setup_guide_url}). Enter only the name and device topic prefix; never paste vendor credentials here. Setup does not send thermostat commands.",
         "data": {
           "name": "Thermostat name",
           "topic_prefix": "MQTT device topic prefix"
@@ -27,7 +27,7 @@
     "step": {
       "init": {
         "title": "Control policy",
-        "description": "Only enable after bridge and duplicate-control checks.",
+        "description": "Only enable after verifying remote bridge routing, fresh telemetry and absence of competing command writers.",
         "data": {
           "enable_controls": "Allow thermostat commands"
         }

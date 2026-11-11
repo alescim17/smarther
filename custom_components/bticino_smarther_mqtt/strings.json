@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Set up a Smarther thermostat",
-        "description": "Requires an existing MQTT integration and a privately configured BTicino/Mosquitto bridge. Setup does not send thermostat commands. The bridge must be verified separately.",
+        "description": "The MQTT bridge is a one-time prerequisite. [First-time setup guide]({setup_guide_url}). Enter only the name and device topic prefix; never paste vendor credentials here. Setup does not send thermostat commands.",
         "data": {
           "name": "Thermostat name",
           "topic_prefix": "Device MQTT topic prefix"
@@ -27,7 +27,7 @@
     "step": {
       "init": {
         "title": "Control policy",
-        "description": "Keep disabled until the remote bridge has been verified and old YAML command entities have been retired. Commands require recent non-retained telemetry.",
+        "description": "Leave disabled until the remote bridge and any other command writers have been checked. Commands require recent non-retained telemetry.",
         "data": {
           "enable_controls": "Allow thermostat control commands (advanced)"
         }

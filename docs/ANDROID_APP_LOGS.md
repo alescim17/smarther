@@ -1,5 +1,7 @@
 # Legacy Android log method: finding MQTT bridge details
 
+For the complete installation order, start at the [illustrated first-time setup guide](FIRST_TIME_SETUP.md). This page documents only one **historical, unverified-on-current-Android** way to identify your own MQTT bridge details.
+
 > **Compatibility notice (historical, unverified today).** The original
 > BTicino Thermostat / Smarther community README described the procedure
 > below for some Android app versions. We have **not verified** that today's
