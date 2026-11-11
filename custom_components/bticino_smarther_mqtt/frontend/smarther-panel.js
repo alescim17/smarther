@@ -102,6 +102,18 @@ function sameDevice(hass, climateId, entityId) {
   return Boolean(climate?.device_id && other?.device_id === climate.device_id);
 }
 
+// The bridge reports an end time, not an original duration. Keep an explicit
+// 0–90 minute scale rather than guessing a 30/60/90 minute starting duration.
+function boostCountdown(hass, ids, now = Date.now()) {
+  const state = smartherState(hass, ids.climate), endState = hass.states[ids.boost_end];
+  if (telemetry(state, now).key !== "fresh" || state.attributes.vendor_mode !== "BOOST"
+    || !usable(endState) || !sameDevice(hass, ids.climate, ids.boost_end)) return null;
+  const end = Date.parse(endState.state);
+  if (!Number.isFinite(end)) return null;
+  const minutes = Math.max(0, (end - now) / 60000);
+  return { minutes, percent: Math.min(100, minutes / 90 * 100) };
+}
+
 function displayState(hass, id, unknown) {
   const state = hass.states?.[id];
   if (!usable(state)) return unknown;
@@ -197,7 +209,7 @@ const FACE_STYLE = `
   .brand { width:25px; height:25px; color:var(--accent); }
   h2 { font-size:16px; font-weight:600; margin:0; overflow-wrap:anywhere; letter-spacing:.1px; flex:1; }
   .mode-label { font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--secondary-text-color,#7a8189); }
-  .body { display:grid; grid-template-columns:minmax(0,1fr) 4px 92px; min-height:326px; padding:14px 12px 10px 20px; gap:12px; }
+  .body { display:grid; grid-template-columns:minmax(0,1fr) 6px 92px; min-height:326px; padding:14px 12px 10px 20px; gap:12px; }
   .view { min-width:0; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:0 4px 5px; }
   .dial { width:100%; max-width:300px; position:relative; aspect-ratio:260/230; }
   .dial svg { display:block; width:100%; height:100%; }
@@ -224,8 +236,8 @@ const FACE_STYLE = `
   .modes { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; justify-content:center; }
   .modes button { border-radius:16px; padding:7px 11px; font-size:10px; color:var(--secondary-text-color,#737b83); }
   .modes button[aria-pressed=true] { background:#ee943d18; color:#bc6b20; font-weight:600; }
-  .boost-track { border-radius:4px; background:var(--divider-color,#f0f1f3); margin:12px 0; position:relative; }
-  .boost-track.active { background:#ef886a; }
+  .boost-track { border-radius:4px; background:var(--divider-color,#f0f1f3); margin:12px 0; position:relative; overflow:hidden; }
+  .boost-fill { position:absolute; bottom:0; left:0; width:100%; background:#e53935; border-radius:4px; }
   .rail { display:flex; flex-direction:column; justify-content:space-evenly; border-left:1px solid var(--divider-color,#f0f1f3); padding-left:8px; }
   .rail button { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:4px; min-height:48px; border-radius:11px; padding:6px 2px; color:var(--secondary-text-color,#8a919b); position:relative; }
   .rail button .icon { width:22px; height:22px; }
@@ -262,7 +274,7 @@ const FACE_STYLE = `
   dl { width:100%; font-size:11px; line-height:1.6; margin:15px 0; }
   dt { color:var(--secondary-text-color,#8a9097); margin-top:10px; } dd { margin:2px 0 0; overflow-wrap:anywhere; }
   .error { color:var(--error-color,#c54d4d); padding:10px; font-size:11px; line-height:1.5; }
-  @media(max-width:430px) { .head { padding:16px 16px 0; } .body { grid-template-columns:minmax(0,1fr) 3px 66px; gap:8px; padding:9px 8px 7px 12px; min-height:318px; } .rail { padding-left:4px; } .rail button span { font-size:8px; } .rail button .icon { width:20px; height:20px; } .temperature { font-size:49px; } .temperature small { font-size:17px; padding-top:7px; } .target { gap:7px; margin-top:-12px; } .target-value input { font-size:18px; width:55px; } .round { width:30px; height:30px; } .modes button { padding:7px 8px; } .footer { padding:11px 14px; gap:6px; } .view-title { flex-direction:column; align-items:flex-start; } .summary strong { font-size:13px; } }
+  @media(max-width:430px) { .head { padding:16px 16px 0; } .body { grid-template-columns:minmax(0,1fr) 5px 66px; gap:8px; padding:9px 8px 7px 12px; min-height:318px; } .rail { padding-left:4px; } .rail button span { font-size:8px; } .rail button .icon { width:20px; height:20px; } .temperature { font-size:49px; } .temperature small { font-size:17px; padding-top:7px; } .target { gap:7px; margin-top:-12px; } .target-value input { font-size:18px; width:55px; } .round { width:30px; height:30px; } .modes button { padding:7px 8px; } .footer { padding:11px 14px; gap:6px; } .view-title { flex-direction:column; align-items:flex-start; } .summary strong { font-size:13px; } }
 `;
 
 class SmartherThermostat extends HTMLElement {
@@ -286,10 +298,27 @@ class SmartherThermostat extends HTMLElement {
     button.addEventListener("click", action); return button;
   }
   _activate(view) { this._view = view; this._error = undefined; this._render(true); if (["temperature", "humidity", "statistics"].includes(view)) this._loadHistory(); }
+  _updateBoostTrack(track, countdown) {
+    if (!track) return;
+    const t = words(this._hass), label = this._hass.language?.startsWith("it") ? "Boost · minuti residui · scala 0–90 min" : "Boost · remaining minutes · scale 0–90 min";
+    const empty = smartherState(this._hass, this._ids.climate)?.attributes.vendor_mode === "BOOST" ? t.unknown : t.noBoost;
+    track.setAttribute("role", "progressbar");
+    track.setAttribute("aria-label", label);
+    track.setAttribute("title", countdown ? `${label}: ${Math.ceil(countdown.minutes)}` : empty);
+    track.setAttribute("aria-valuemin", "0"); track.setAttribute("aria-valuemax", "90");
+    track.setAttribute("aria-valuetext", countdown ? `${Math.ceil(countdown.minutes)} min` : empty);
+    track.setAttribute("aria-valuenow", String(Math.min(90, countdown?.minutes || 0)));
+    const fill = element("div", undefined, "boost-fill");
+    fill.setAttribute("style", `height:${countdown?.percent || 0}%`);
+    track.replaceChildren(fill);
+  }
   _render(force = false) {
     if (!this._hass || !this._ids || !this.isConnected) return;
     const state = smartherState(this._hass, this._ids.climate);
     const status = gate(this._hass, this._ids.climate);
+    const countdown = boostCountdown(this._hass, this._ids);
+    // Update the countdown even while a focused field preserves its draft.
+    this._updateBoostTrack(this.shadowRoot.querySelector(".boost-track"), countdown);
     if (status !== "ready") this._draft = undefined;
     const signature = JSON.stringify([this._hass.language, this._view, this._draft, this._boostMinutes, this._busy, this._error,
       this._historyVersion, status, Math.floor(Date.now() / 15000), ...Object.values(this._ids).map(id => this._hass.states[id])]);
@@ -300,7 +329,7 @@ class SmartherThermostat extends HTMLElement {
     const head = element("div", undefined, "head"), brand = icon("climate"); brand.classList.add("brand");
     head.append(brand, element("h2", this._device.title), element("span", t[state?.state] || t.unavailable, "mode-label"));
     const body = element("div", undefined, "body"), view = element("div", undefined, "view");
-    const track = element("div", undefined, `boost-track${state?.attributes.vendor_mode === "BOOST" ? " active" : ""}`); track.setAttribute("aria-hidden", "true");
+    const track = element("div", undefined, "boost-track"); this._updateBoostTrack(track, countdown);
     const rail = element("nav", undefined, "rail"); rail.setAttribute("aria-label", t.views);
     for (const name of ["climate", "temperature", "humidity", "program", "boost", "statistics", "info"]) {
       // Climate is the return action on the active chart's shortcut, matching
@@ -311,9 +340,8 @@ class SmartherThermostat extends HTMLElement {
       button.dataset.view = name; button.setAttribute("aria-pressed", String(selected));
       button.setAttribute("aria-label", selected ? `${t.climate}: ${t[name]}` : t[name]);
       button.append(icon(selected ? "climate" : name), element("span", selected ? t.climate : t[name]));
-      const end = Date.parse(this._hass.states[this._ids.boost_end]?.state || "");
-      if (name === "boost" && state?.attributes.vendor_mode === "BOOST" && Number.isFinite(end)) {
-        button.append(element("span", String(Math.max(0, Math.ceil((end - Date.now()) / 60000))), "badge"));
+      if (name === "boost" && countdown) {
+        button.append(element("span", String(Math.ceil(countdown.minutes)), "badge"));
       }
       rail.append(button);
     }

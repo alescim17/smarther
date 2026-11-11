@@ -37,6 +37,11 @@ The compact face follows the original Smarther card's visual structure: a large
 thermostat dial with current temperature, a setpoint below it, a narrow Boost
 indicator and a column of shortcuts. The shortcuts switch locally between the
 dial, temperature, humidity, program, Boost, heating statistics and information.
+The red vertical Boost bar drains from the top as the reported end time approaches,
+on an explicit 0–90 minute scale (the bridge does not report the original duration).
+It refreshes every 15 seconds, even while editing a setpoint, and empties when
+Boost ends or its telemetry is missing, stale or unavailable. It is independent
+of the local duration selector. Each visible configured device gets its own card.
 Switching views never calls a thermostat service or creates HA helper entities.
 
 The appearance is inspired by the native HA thermostat and the original YAML

@@ -9,11 +9,12 @@ class Element {
   append(...nodes) { this.children.push(...nodes); }
   replaceChildren(...nodes) { this.children = nodes; }
   setAttribute(key, value) { this[key] = value; }
+  removeAttribute(key) { delete this[key]; }
   addEventListener(name, handler) { this.listeners[name] = handler; }
   attachShadow() { return this.shadowRoot = new Element('shadow'); }
   dispatchEvent(event) { this.lastEvent = event; }
   checkValidity() { return true; }
-  querySelector(tag) { return find(this,n=>n.tag===tag); }
+  querySelector(tag) { return find(this,n=>tag.startsWith('.') ? n.className===tag.slice(1) : n.tag===tag); }
 }
 function runtime(helpers) {
   const registry = new Map();
@@ -34,7 +35,7 @@ function runtime(helpers) {
   return { registry, timers, context };
 }
 async function main() {
-  const ids = { climate: 'climate.renamed', program: 'select.renamed', humidity: 'sensor.humidity', boost_30: 'button.boost', boost_60: 'button.boost_60', cancel_boost: 'button.cancel', active_program: 'sensor.active' };
+  const ids = { climate: 'climate.renamed', program: 'select.renamed', humidity: 'sensor.humidity', boost_end: 'sensor.boost_end', boost_30: 'button.boost', boost_60: 'button.boost_60', cancel_boost: 'button.cancel', active_program: 'sensor.active' };
   const device = { entry_id: 'synthetic', title: 'Synthetic', entities: ids };
   const now = Date.now();
   const states = {
@@ -74,6 +75,35 @@ async function main() {
   const widget=panel._cards[0];
   assert.equal(widget._view,'climate');
   assert.equal(calls.length,0,'Dial rendering sends no services');
+  states[ids.climate].attributes.vendor_mode='BOOST';
+  states[ids.boost_end]={state:new Date(now+90*60000).toISOString(),attributes:{}};
+  context.boostHass=hass;context.boostIds=ids;context.boostNow=now;
+  assert.equal(vm.runInContext('boostCountdown(boostHass,boostIds,boostNow).percent',context),100);
+  // Refresh live telemetry so the passage of time remains a valid live sample.
+  states[ids.climate].attributes.last_live_message=new Date(now+45*60000).toISOString();
+  assert.equal(vm.runInContext('boostCountdown(boostHass,boostIds,boostNow+45*60000).percent',context),50);
+  states[ids.climate].attributes.last_live_message=new Date(now).toISOString();
+  states[ids.boost_end].state=new Date(now+45*60000).toISOString();
+  widget._render(true);
+  let track=find(widget.shadowRoot,n=>n.className==='boost-track');
+  assert.equal(track['aria-valuemax'],'90');
+  assert.ok(Number.parseFloat(track.children[0].style.split(':')[1])>49);
+  widget.shadowRoot.activeElement={tagName:'INPUT'};
+  states[ids.boost_end].state=new Date(now+9*60000).toISOString();
+  widget._render();
+  assert.ok(Number.parseFloat(track.children[0].style.split(':')[1])<11,'Countdown updates while target field has focus');
+  widget.shadowRoot.activeElement=null;
+  hass.entities[ids.boost_end].device_id='other';
+  assert.equal(vm.runInContext('boostCountdown(boostHass,boostIds,boostNow)',context),null,'No cross-device countdown');
+  hass.entities[ids.boost_end].device_id='synthetic';
+  states[ids.boost_end].state='unavailable';
+  assert.equal(vm.runInContext('boostCountdown(boostHass,boostIds,boostNow)',context),null);
+  states[ids.boost_end].state=new Date(now+45*60000).toISOString();
+  assert.equal(vm.runInContext('boostCountdown(boostHass,boostIds,boostNow+21*60000)',context),null,'Do not animate stale telemetry');
+  states[ids.boost_end].state=new Date(now-60000).toISOString();
+  assert.equal(vm.runInContext('boostCountdown(boostHass,boostIds,boostNow).percent',context),0);
+  states[ids.climate].attributes.vendor_mode='MANUAL';
+  assert.equal(vm.runInContext('boostCountdown(boostHass,boostIds,boostNow)',context),null,'Cancelled Boost empties the bar');
   const oldCards=panel._cards;
   await panel._load();assert.equal(panel._cards,oldCards,'Metadata refresh preserves editing');
   widget._activate('temperature');await new Promise(resolve=>setImmediate(resolve));
@@ -109,8 +139,24 @@ async function main() {
   widget._activate('climate');assert.equal(calls.length,1,'Missing Recorder does not block the thermostat or call services');
   hass.callWS=originalWS;
   panel.connectedCallback();widget.connectedCallback();
+  await new Promise(resolve=>setImmediate(resolve));
   assert.ok([...timers.values()].includes(30000)&&[...timers.values()].includes(15000));
   panel.disconnectedCallback();widget.disconnectedCallback();assert.equal(timers.size,0);
+  // Real metadata can return multiple entries with renamed, disjoint entities.
+  const ids2=Object.fromEntries(Object.entries(ids).map(([key,id])=>[key,id+'_second']));
+  for(const [key,id] of Object.entries(ids2)) {
+    states[id]=JSON.parse(JSON.stringify(states[ids[key]]));
+    hass.entities[id]={device_id:'second'};
+  }
+  hass.callWS=async()=>({entries:[device,{entry_id:'second',title:'Second thermostat',entities:ids2}]});
+  await panel._load();
+  assert.equal(panel._cards.length,2,'Every visible Smarther gets its own card');
+  assert.equal(panel._cards[0]._ids.climate,ids.climate);
+  assert.equal(panel._cards[1]._ids.climate,ids2.climate);
+  assert.ok(textContent(panel._cards[1].shadowRoot).includes('Second thermostat'));
+  const second=panel._cards[1],before=calls.length;
+  await second._command('climate','set_temperature',ids.climate,{temperature:23});
+  assert.equal(calls.length,before,'Second card cannot control the first thermostat');
   const midnight=Date.parse('2026-10-24T22:05:00Z');
   context.statsInput=[{lu:Date.parse('2026-10-24T21:55:00Z')/1000,s:'heat',a:{hvac_action:'heating',last_live_message:'2026-10-24T21:55:00Z',control_max_age_seconds:1200}}];
   context.statsEnd=midnight;
