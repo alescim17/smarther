@@ -13,7 +13,7 @@ const TEXT = {
     cancel: "Cancel", cancelLabel: "Cancel Boost and resume the schedule",
     humidity: "Humidity", heating: "Heating", idle: "Idle", unknown: "Unknown",
     unavailable: "Unavailable", readOnly: "Read-only", stale: "Stale telemetry",
-    fresh: "Live telemetry", noLive: "Waiting for live telemetry", retained: "Retained snapshot only", notLive: "Telemetry not live",
+    fresh: "Live telemetry", noLive: "Waiting for live telemetry", retained: "Retained snapshot only", notLive: "Telemetry not live", enabled: "Enabled", telemetry: "Telemetry",
     end: "Boost ends", noBoost: "No active Boost", ago: "min ago", pending: "Sending…",
     failed: "Command refused or failed. Check telemetry and integration options.",
     invalid: "Check the selected value before applying.",
@@ -28,7 +28,7 @@ const TEXT = {
     cancel: "Annulla", cancelLabel: "Annulla Boost e riprendi il programma",
     humidity: "Umidità", heating: "Riscaldamento", idle: "Inattivo", unknown: "Sconosciuto",
     unavailable: "Non disponibile", readOnly: "Sola lettura", stale: "Telemetria obsoleta",
-    fresh: "Telemetria live", noLive: "In attesa di telemetria live", retained: "Solo dati retained", notLive: "Telemetria non live",
+    fresh: "Telemetria live", noLive: "In attesa di telemetria live", retained: "Solo dati retained", notLive: "Telemetria non live", enabled: "Abilitati", telemetry: "Telemetria",
     end: "Fine Boost", noBoost: "Nessun Boost attivo", ago: "min fa", pending: "Invio…",
     failed: "Comando rifiutato o non riuscito. Controlla telemetria e opzioni dell’integrazione.",
     invalid: "Controlla il valore selezionato prima di applicarlo.",
@@ -91,8 +91,7 @@ function gate(hass, id) {
   const state = smartherState(hass, id);
   if (!usable(state)) return "unavailable";
   if (state.attributes.controls_enabled !== true) return "readOnly";
-  const status = telemetry(state).key;
-  return status === "fresh" ? "ready" : status;
+  return "ready";
 }
 
 function sameDevice(hass, climateId, entityId) {
@@ -433,7 +432,7 @@ class SmartherThermostat extends HTMLElement {
   }
   _info(view, state, status) {
     const t = words(this._hass), details = element("dl"); view.append(element("h3", t.info));
-    for (const [label, value] of [[t.mode, t[state?.state] || t.unavailable], [t.controls, status === "ready" ? t.fresh : t[status]],
+    for (const [label, value] of [[t.mode, t[state?.state] || t.unavailable], [t.controls, status === "ready" ? t.enabled : t[status]], [t.telemetry, t[telemetry(state).key]],
       [t.lastLive, localDate(this._hass, state?.attributes.last_live_message)], [t.end, state?.attributes.vendor_mode === "BOOST" ? this._sensor("boost_end") : t.noBoost]]) details.append(element("dt", label), element("dd", value));
     view.append(details);
   }

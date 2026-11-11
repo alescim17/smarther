@@ -105,8 +105,9 @@ compatible native version for rollback.
 After normal integration setup, **Smarther** appears in the sidebar and shows all
 visible configured thermostats, using their actual entity registry IDs. Each
 widget includes current/target temperature, mode, program, Boost 30/60/90 and
-cancel, humidity, heating, Boost end and live/stale telemetry. Controls respect
-read-only and fresh-telemetry policy. Opening the panel sends no commands.
+cancel, humidity, heating, Boost end and live/stale telemetry. Commands require
+controls to be enabled and a reported thermostat state; older or retained data
+are flagged but do not by themselves block commands. Opening the panel sends no commands.
 
 The panel uses a compact thermostat face inspired by the original Smarther
 card: a large temperature dial, discreet setpoint controls, a narrow Boost

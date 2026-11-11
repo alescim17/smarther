@@ -12,7 +12,7 @@ from homeassistant.components import mqtt
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 
-from .const import CONF_ENABLE_CONTROLS, CONF_TOPIC_PREFIX, MAX_CONTROL_AGE_SECONDS
+from .const import CONF_ENABLE_CONTROLS, CONF_TOPIC_PREFIX
 from .protocol import (
     ProtocolError,
     ThermostatState,
@@ -139,11 +139,8 @@ class SmartherMqttHub:
                 "Smarther control commands are disabled. Enable them in integration options "
                 "only after verifying the MQTT bridge and disabling competing legacy control."
             )
-        if self.last_live is None:
-            raise HomeAssistantError("No non-retained live thermostat message has been observed")
-        age = (datetime.now(timezone.utc) - self.last_live).total_seconds()
-        if age > MAX_CONTROL_AGE_SECONDS:
-            raise HomeAssistantError("Thermostat telemetry is too old to allow control")
+        if not self.has_state:
+            raise HomeAssistantError("No thermostat state has been observed")
 
     async def _publish(self, payload: str) -> None:
         self._require_command_permission()
