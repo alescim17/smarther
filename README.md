@@ -94,6 +94,21 @@ uses built-in cards. There is **no automatic dashboard toggle** in the native
 integration: see [where the dashboard appears and how to import it](docs/DASHBOARD.md).
 Install/update never creates or replaces user dashboards.
 
+## Development and acknowledgments
+
+The idea, requirements and technical direction of this integration were
+human-led. The native Home Assistant implementation was written predominantly
+with AI coding tools, including Codex, with human supervision and validation
+on a real first-generation Smarther thermostat. The maintainer remains
+responsible for reviewing and maintaining the released integration.
+
+This project builds on the earlier community-developed YAML/MQTT Smarther
+solution. **Original YAML/MQTT project contributors:** Daniele (GitHub
+username: `Danye`). Other original collaborators will be acknowledged as
+they confirm their preferred credit. These acknowledgments recognize the
+earlier work; they do not imply authorship of individual commits in the
+rewritten native integration.
+
 ## Help and attribution
 
 Use the issue tracker of the approved public distribution. Share only sanitized
