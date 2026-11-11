@@ -2,9 +2,10 @@
 
 ![Smarther icon](custom_components/bticino_smarther_mqtt/brand/icon.png)
 
-A community integration for BTicino Smarther thermostats. It provides climate
-readings, heating diagnostics, program selection and Boost controls, with English
-and Italian UI translations.
+A community integration for first-generation BTicino Smarther thermostats. It
+provides climate readings, heating diagnostics, program selection and Boost
+controls. Setup and options forms are available in English and Italian; entity
+names currently use English.
 
 Home Assistant MQTT and a separately configured TLS Mosquitto bridge connect to
 the manufacturer's remote MQTT service. No BTicino, Legrand or Netatmo developer
@@ -28,10 +29,14 @@ and model-specific testing. Sanitized protocol evidence is welcome. See BTicino'
 [first-generation manual](https://dar.bticino.it/asset/Documents/RA00158AF_U_EN.pdf),
 and [Smarther AC product information](https://www.bticino.com/news/smarther-ac-with-netatmo).
 
-Version **0.1.0b1** is a prerelease candidate. Availability in the public catalog
-and publication of a versioned release require separate approval.
+The [GitHub Releases](https://github.com/alescim17/smarther/releases) page lists
+published versions. Pre-releases require an explicit Marketplace opt-in; official
+catalog listing is a separate process.
 
 ## Requirements
+
+**New installation?** Start with the [illustrated first-time setup guide](docs/FIRST_TIME_SETUP.md).
+The MQTT bridge is a **one-time private prerequisite**, not a field in the integration wizard.
 
 Home Assistant **2026.11.0+**, its MQTT integration, a broker and a compatible
 thermostat with an independently validated TLS-authenticated bridge are required.
@@ -47,25 +52,26 @@ does not prove a physical command was applied. Off requests protection/antifreez
 
 ## Installation sequence
 
-1. [Check whether your own Android app provides the historical MQTT log](docs/ANDROID_APP_LOGS.md)
-   or obtain valid bridge details through an authorized existing configuration.
-   **Never share logs or vendor credentials publicly.**
-2. [Configure the Mosquitto bridge](docs/MOSQUITTO_BRIDGE.md) with validated TLS
-   and **exact inbound telemetry topics**. Its published template intentionally
+1. Start with the [illustrated first-time setup guide](docs/FIRST_TIME_SETUP.md).
+   Obtain authorized bridge credentials privately; the
+   [historical Android log procedure](docs/ANDROID_APP_LOGS.md) is not verified
+   for modern Android apps. **Never share logs or vendor credentials publicly.**
+2. [Configure the Mosquitto bridge](docs/MOSQUITTO_BRIDGE.md) with verified TLS
+   and **exact inbound telemetry topics**. The published template intentionally
    does not forward outgoing thermostat SET messages.
-3. Confirm Home Assistant's MQTT connection and fresh, non-retained state.
-4. Install and configure the Smarther integration with only the device name
-   and the exact topic prefix; its controls start **disabled**.
-5. [Add an optional dashboard manually](docs/DASHBOARD.md), either as a
-   built-in thermostat card on an existing dashboard or as a dedicated
-   dashboard you choose to show in the sidebar.
+3. Confirm Home Assistant's MQTT integration and fresh, non-retained device state.
+4. Install and configure Smarther with just the device name and exact topic
+   prefix; new entries start **read-only**.
+5. [Add an optional dashboard manually](docs/DASHBOARD.md), using standard
+   Home Assistant cards; no dashboard is created automatically.
 
 ## Install
 
-After an approved public release is available, add that public repository to
-Home Assistant Marketplace/HACS as an integration repository and select its
-compatible native version. Follow any displayed restart repair, then open
-Settings → Devices & services → Add integration → BTicino Smarther MQTT.
+Add this public repository to Home Assistant Marketplace/HACS as an integration
+repository and select a compatible version from its published releases. To use
+a beta, enable pre-releases for the repository. Follow any displayed restart
+instruction, then open Settings → Devices & services → Add integration →
+BTicino Smarther MQTT.
 
 Enter a name and the exact private prefix ending before `/device_state`, including
 the leading slash. A generic example is `/cro/plantid/EXAMPLE/gwid/EXAMPLE`.
