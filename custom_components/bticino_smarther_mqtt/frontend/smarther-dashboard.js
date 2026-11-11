@@ -308,7 +308,11 @@ class SmartherDashboardEditor extends HTMLElement {
     native.addEventListener("change", (event) => {
       event.stopPropagation();
       this._config = { ...this._config, native_only: native.checked };
-      this._publishSelection();
+      // A layout change keeps the existing snapshot, including when editing
+      // the dashboard at its already-occupied recommended URL.
+      this.dispatchEvent(new CustomEvent("config-changed", {
+        detail: { config: this._config }, bubbles: true, composed: true,
+      }));
       this._render();
     });
     const nativeLabel = element("label");
