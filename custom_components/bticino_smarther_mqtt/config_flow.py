@@ -53,7 +53,14 @@ class SmartherMqttConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_TOPIC_PREFIX): str,
             }
         )
-        return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
+        return self.async_show_form(
+            step_id="user",
+            data_schema=schema,
+            errors=errors,
+            description_placeholders={
+                "setup_guide_url": "https://github.com/alescim17/smarther/blob/main/docs/FIRST_TIME_SETUP.md",
+            },
+        )
 
     @staticmethod
     @callback
