@@ -9,7 +9,8 @@
   ],
   "config_flow": true,
   "dependencies": [
-    "mqtt"
+    "mqtt",
+    "panel_custom"
   ],
   "documentation": "https://github.com/alescim17/smarther",
   "integration_type": "device",

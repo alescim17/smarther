@@ -62,8 +62,10 @@ does not prove a physical command was applied. Off requests protection/antifreez
 3. Confirm Home Assistant's MQTT integration and fresh, non-retained device state.
 4. Install and configure Smarther with just the device name and exact topic
    prefix; new entries start **read-only**.
-5. [Add an optional dashboard manually](docs/DASHBOARD.md), using standard
-   Home Assistant cards; no dashboard is created automatically.
+5. Open **Smarther** in the sidebar. The panel is registered automatically:
+   no dashboard creation, JavaScript resource registration or YAML is needed.
+   In the device's Options, **Show this thermostat in the Smarther panel** lets
+   you hide it. This flag is on by default and never enables commands.
 
 ## Install
 
@@ -89,10 +91,30 @@ options, entity IDs, device ID and Recorder history; do not delete and re-add
 the thermostat for a normal update. Back up first and retain a previous
 compatible native version for rollback.
 
-The [optional dashboard example](custom_components/bticino_smarther_mqtt/examples/dashboard.yaml)
-uses built-in cards. There is **no automatic dashboard toggle** in the native
-integration: see [where the dashboard appears and how to import it](docs/DASHBOARD.md).
-Install/update never creates or replaces user dashboards.
+## Automatic Smarther panel
+
+After normal integration setup, **Smarther** appears in the sidebar and shows all
+visible configured thermostats, using their actual entity registry IDs. Each
+widget includes current/target temperature, mode, program, Boost 30/60/90 and
+cancel, humidity, heating, Boost end and live/stale telemetry. Controls respect
+read-only and fresh-telemetry policy. Opening the panel sends no commands.
+
+The panel works when opened directly. Where Home Assistant's documented card
+helpers are already available, it hosts a native climate **Tile** with Smarther
+features. Otherwise it renders its own equivalent climate widget with the same
+controls and safety gates. It never imports private HA frontend modules or asks
+you to open another dashboard first. No third-party cards are required.
+
+**Show this thermostat in the Smarther panel** is on by default in each device's
+Options. Turning it off hides that device; hiding all devices removes the menu
+entry. Showing one again restores it automatically. Visibility changes do not
+reconnect MQTT, enable commands or change existing user dashboards. Users only
+see entity mappings they have permission to read.
+
+The panel is managed by the integration. It is not an editable Lovelace dashboard.
+The existing [native-card example](custom_components/bticino_smarther_mqtt/examples/dashboard.yaml)
+remains an optional route for users who want their own dashboard; it is not needed
+to use Smarther. See [panel behavior and visibility](docs/DASHBOARD.md).
 
 ## Development and acknowledgments
 
@@ -116,3 +138,4 @@ MQTT payloads. A broker connection alone does not prove the vendor bridge is liv
 [MIT licensed](LICENSE), preserving [attribution and provenance](docs/PROVENANCE.md).
 The geometric icon is original project artwork. This community project is not
 affiliated with or endorsed by BTicino, Legrand, Netatmo or Home Assistant.
+

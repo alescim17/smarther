@@ -4,12 +4,18 @@ This integration never installs a broker, runs a shell script, or issues command
 during setup/reload. Legacy YAML installations are not migrated implicitly.
 """
 
+import logging
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
+from .const import CONF_ENABLE_CONTROLS, DEFAULT_ENABLE_CONTROLS
+from .panel import async_setup_panel, async_unload_panel
 from .mqtt_bridge import SmartherMqttHub
+
+_LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = (
     Platform.CLIMATE, Platform.SENSOR, Platform.SELECT, Platform.BUTTON,
@@ -29,13 +35,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except Exception:
         hub.close()
         raise
-    entry.async_on_unload(entry.add_update_listener(_async_options_changed))
+    try:
+        await async_setup_panel(hass, entry)
+    except Exception:
+        # Optional frontend support must not interrupt thermostat telemetry.
+        # Do not log raw exceptions, which can contain local paths.
+        _LOGGER.warning(
+            "Smarther sidebar panel is unavailable; native entities remain available"
+        )
+    controls_enabled = entry.options.get(CONF_ENABLE_CONTROLS, DEFAULT_ENABLE_CONTROLS)
+
+    async def options_changed(hass, updated_entry):
+        if updated_entry.options.get(CONF_ENABLE_CONTROLS, DEFAULT_ENABLE_CONTROLS) != controls_enabled:
+            await hass.config_entries.async_reload(updated_entry.entry_id)
+        else:
+            # Visibility is presentation only: do not reconnect MQTT or touch
+            # thermostat controls just to show/hide the panel.
+            await async_setup_panel(hass, updated_entry)
+
+    entry.async_on_unload(entry.add_update_listener(options_changed))
     return True
-
-
-async def _async_options_changed(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Apply changed read-only/control policy through normal entry reload."""
-    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -43,4 +62,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     success = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if success:
         entry.runtime_data.close()
+        await async_unload_panel(hass, entry)
     return success
+
