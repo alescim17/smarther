@@ -33,6 +33,11 @@ hidden, the menu entry is removed immediately.
 
 ## Thermostat face and statistics
 
+![Two synthetic Smarther thermostat cards, one with an active Boost](images/panel-two-thermostats.png)
+
+The screenshots in this guide use synthetic devices and data from an isolated
+Home Assistant instance.
+
 The compact face follows the original Smarther card's visual structure: a large
 thermostat dial with current temperature, a setpoint below it, a narrow Boost
 indicator and a column of shortcuts. The shortcuts switch locally between the
@@ -59,6 +64,8 @@ and valid values at the gesture boundary. State is never updated optimistically.
 Temperature and humidity use Home Assistant's authenticated history API for the
 last 24 hours. Minima/maxima describe recorded samples. Unknown/unavailable data
 remain gaps rather than zero values. No chart data are generated in production.
+
+![Example temperature history with synthetic data](images/panel-temperature-history.png)
 
 The statistics view requests seven days of climate history and sums intervals
 whose recorded HVAC action is heating. Each interval is capped by the recorded

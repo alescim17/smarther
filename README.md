@@ -93,6 +93,10 @@ compatible native version for rollback.
 
 ## Automatic Smarther panel
 
+![Smarther sidebar panel with two synthetic thermostats and an active Boost countdown](docs/images/panel-two-thermostats.png)
+
+*Isolated demonstration with synthetic devices and readings.*
+
 After normal integration setup, **Smarther** appears in the sidebar and shows all
 visible configured thermostats, using their actual entity registry IDs. Each
 widget includes current/target temperature, mode, program, Boost 30/60/90 and
@@ -104,6 +108,12 @@ card: a large temperature dial, discreet setpoint controls, a narrow Boost
 indicator and side shortcuts. Temperature/humidity charts show the last 24 hours;
 heating statistics show recorded minutes over seven local calendar days. Missing
 or stale intervals are excluded rather than counted as heating.
+The red Boost bar shows remaining time on a 0–90 minute scale and empties as
+the reported end time approaches.
+
+![Temperature history in the Smarther panel](docs/images/panel-temperature-history.png)
+
+*Example temperature history with synthetic data.*
 
 This is a self-contained widget close to HA's native thermostat appearance,
 with the same rendering on direct entry and after browsing dashboards. No
