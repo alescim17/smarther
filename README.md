@@ -2,10 +2,31 @@
 
 ![Smarther icon](custom_components/bticino_smarther_mqtt/brand/icon.png)
 
-A community integration for compatible BTicino Smarther thermostats. It uses
-Home Assistant MQTT and a separately configured vendor-cloud Mosquitto bridge.
-It provides climate readings, heating diagnostics, program selection and Boost
-controls, with English and Italian UI translations.
+A community integration for BTicino Smarther thermostats. It provides climate
+readings, heating diagnostics, program selection and Boost controls, with English
+and Italian UI translations.
+
+Home Assistant MQTT and a separately configured TLS Mosquitto bridge connect to
+the manufacturer's remote MQTT service. No BTicino, Legrand or Netatmo developer
+application registration or developer OAuth token is required. The integration
+does not continuously read state through developer REST APIs and therefore does
+not consume their API call allowances, which can limit continuous home automation.
+It still depends on valid bridge credentials, network connectivity and availability
+of the remote MQTT service; service terms and broker-side limits may apply.
+
+## Compatibility
+
+- **Smarther V1:** MQTT compatibility was verified on one first-generation
+  BTicino device in the X8000/X800W family (including X8000W), originally
+  managed by the Thermostat app. Individual V1 product codes have not all been independently tested.
+- **Smarther2 with Netatmo:** not yet verified; uses Home + Control.
+- **Smarther AC with Netatmo:** not yet verified; uses Home + Control.
+
+Other models might work, but app and backend protocol differences need evidence
+and model-specific testing. Sanitized protocol evidence is welcome. See BTicino's
+[Smarther2 catalogue](https://www.bticino.it/sites/default/files/2025-04/catalogo-smarther2.pdf),
+[first-generation manual](https://dar.bticino.it/asset/Documents/RA00158AF_U_EN.pdf),
+and [Smarther AC product information](https://www.bticino.com/news/smarther-ac-with-netatmo).
 
 Version **0.1.0b1** is a prerelease candidate. Availability in the public catalog
 and publication of a versioned release require separate approval.
@@ -57,12 +78,10 @@ process. Private repositories are not supported by the public HACS path.
 
 ## Update, history and rollback
 
-Read [the update guide](docs/UPDATE.md). If migrating from an older YAML-based
-Smarther configuration, follow [the migration guide](docs/MIGRATION.md) first.
-Keep the existing native entry, prefix, options,
-entity/device identities and Recorder database. Do not delete and re-add the
-thermostat for an update. Retain a supported backup and the previous compatible
-native release; the historical YAML package is not a compatible rollback target.
+Read [the update guide](docs/UPDATE.md). Keep the existing config entry,
+options, entity IDs, device ID and Recorder history; do not delete and re-add
+the thermostat for a normal update. Back up first and retain a previous
+compatible native version for rollback.
 
 The [optional dashboard example](custom_components/bticino_smarther_mqtt/examples/dashboard.yaml)
 uses built-in cards. There is **no automatic dashboard toggle** in the native

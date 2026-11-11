@@ -47,7 +47,7 @@ outbound command route. Do not forward a wildcard bidirectionally: that can also
 forward old retained or queued actuator messages when a bridge starts, independently
 of the integration's read-only setting. A command route requires a separate,
 authorized safety check of exact direction/topic, retained and queued command
-quarantine, and disabled legacy writers before it is configured. Do not clear
+quarantine, and disabling other command writers before it is configured. Do not clear
 retained messages as an incidental installation step. Verify the actual vendor
 protocol and existing routing before changing a working installation; the
 template itself is not proof that a bridge is connected.

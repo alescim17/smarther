@@ -7,13 +7,7 @@ an Overview view, a sidebar item, or a generated YAML file under
 only integration Options toggle controls whether thermostat commands are
 allowed; there is **no "Install dashboard" option**.
 
-The historical YAML package used a separate
-`bticino_thermostat_dashboard` setting and generated a dedicated
-`/config/smarther/dashboard/` layout, including community custom cards.
-That mechanism is **not** present in this native integration, and its old
-dashboard toggle is not supported here.
-
-The new, much simpler [optional example](../custom_components/bticino_smarther_mqtt/examples/dashboard.yaml)
+The [optional example](../custom_components/bticino_smarther_mqtt/examples/dashboard.yaml)
 uses only Home Assistant's **built-in thermostat** and **history graph** cards.
 No `layout-card`, `bar-card`, `button-card`, `apexcharts-card`,
 `card-mod` or `config-template-card` is required.
@@ -64,7 +58,7 @@ After you create it, the dashboard is **user-owned**, saved by Home
 Assistant through its supported UI (or deliberately managed by you as a
 separate YAML dashboard). It is **not** stored inside the integration's
 `brand/` or `examples/` folder, and installing/updating Smarther never
-overwrites it. Never directly edit Home Assistant `.storage` files.
+overwrites it. The integration does not write directly to Home Assistant `.storage` files. Never edit them directly.
 
 Back up any existing dashboard before modifying it. A compatible Smarther
 integration update preserves the existing config entry/entity identity, so
