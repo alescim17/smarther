@@ -1,52 +1,17 @@
-# Install, update and rollback
+# Update and rollback
 
-Use a compatible native integration release from the approved public distribution.
-Home Assistant Marketplace/HACS replaces only the component directory. The broker,
-bridge, user dashboards, configuration entries and Recorder remain separately owned.
+Use a compatible native integration version. Before updating, make a supported
+Home Assistant backup including configuration, registries and Recorder; back up
+an external database separately. Retain the previous compatible version.
 
-## Migrating from a legacy YAML configuration
+Update through the installation method used and follow Home Assistant's restart
+requirements. Keep the existing config entry and its options: do not delete and
+reconfigure the thermostat for a normal update. Compatible updates preserve entity
+IDs, device ID and Recorder history. Check the entry and history after restarting.
+Keep other command writers disabled and avoid changing bridge routing or retained
+messages during an ordinary update.
 
-Use [the migration guide](MIGRATION.md) before installing the native integration
-alongside legacy YAML entities. A native integration update and a migration from
-a legacy YAML package are different operations. The former preserves its own
-entity registry and Recorder history; it does not adopt old YAML unique IDs or
-merge legacy history automatically. Do not re-enable legacy command writers or
-updaters to complete a migration.
-
-## Before changing versions
-
-Make a supported Home Assistant backup covering configuration, registries and
-Recorder; back up any external database separately. Keep the previous compatible
-native component archive and its checksum. Record the existing entry, options,
-disabled state and entity/device identities privately. Preserve the exact prefix,
-domain and IDs. Never delete and re-add the entry as an update technique.
-
-Verify that other legacy writers/installers remain disarmed and that configuration
-Git workflows cannot overwrite the custom component. Do not change bridge routing
-or publish physical test commands as part of an ordinary software update.
-
-## Apply and verify
-
-Install the selected version through Marketplace/HACS and follow its restart repair
-when required. An already loaded integration needs a planned HA restart after a
-code update. A manual test installation must follow the same loading requirements.
-
-After startup, verify the installed version, unchanged entries/options and stable
-entity/device IDs. Observe fresh telemetry passively, check prior history and look
-for duplicates or new errors. Installation does not itself prove device control.
-
-Version 0.1.0b1 keeps config flow schema 1, the domain and the identity algorithm
-of 0.1.0b0. Device identity derives from the exact configured prefix; entity unique
-IDs use stable suffixes. Current versions do not migrate legacy YAML history,
-purge Recorder, import dashboards or enable controls during updates.
-
-## Rollback
-
-Reinstall a prior compatible native version and follow HA's loading/restart
-requirements while retaining the entry and database. Do not use the historical
-YAML release line or re-enable its writers. If a future entry migration prevents
-a compatible downgrade, restore the supported pre-update HA/Recorder backup.
-Never hand-edit `.storage` to perform a migration or rollback.
-
-Before compatible public releases exist, retain the private preview artifact and
-supported backup for recovery; do not claim a Marketplace-selectable rollback.
+To roll back, reinstall the previous compatible native version and restart as
+required, retaining the entry and database. If a future version cannot safely be
+downgraded, restore the pre-update Home Assistant and Recorder backup. Do not
+edit `.storage` directly.

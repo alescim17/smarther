@@ -4,9 +4,8 @@ The original Smarther community project was distributed under the MIT license,
 copyright (c) 2022 xsmarther. The complete copyright, permission and warranty notice
 is retained in the root `LICENSE` and the installed component's `LICENSE`.
 
-The native MQTT integration is a subsequent community implementation. It keeps
-the original project's attribution without distributing its historical installers,
-legacy YAML packages, private development history or archived screenshots.
+The native MQTT integration is a subsequent community implementation and retains
+the original project’s attribution.
 
 The geometric thermostat artwork and its generation script are original project
 artwork (2026 Smarther contributors), provided under the same MIT license.

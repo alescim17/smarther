@@ -28,9 +28,19 @@ flowchart LR
    manager permitted to access your documents). Look for the folder
    `Documents/Chronotermostat/` in shared storage. Folder availability and
    names vary by app and Android version.
+
+   ![Synthetic diagram showing the Thermostat app and Android Files leading to Documents](images/android/android-procedure.svg)
+
+   *Illustration: historical app and file-manager path; availability varies.*
+
 2. If that folder exists, look for a date-stamped file matching
    `Eliot_Thermostat_PrtLogYYYY_MM_DD.txt`, as described in the older
    community instructions. Use the latest suitable file **privately**.
+
+   ![Synthetic file list highlighting the dated PrtLog file in Documents Chronotermostat](images/android/find-log.svg)
+
+   *Illustration: find the date-stamped PrtLog file in the folder.*
+
 3. Inside the file, search for `cDeviceManager.TryConnectMQTT`. The
    historical format, represented with **entirely fictional values**, is:
 
@@ -93,8 +103,8 @@ rotate affected credentials using an authorized vendor procedure.
 
 ## Illustrations and provenance
 
-The directory and log fragments above are deliberately **synthetic diagrams
-and redacted examples**, derived from the historical README's terminology.
+The diagrams and log fragments above are original, entirely synthetic examples
+using the historical README’s terminology.
 Old screenshots are **not copied**: some archived images may contain device
 identifiers, and their redistribution/privacy clearance is not established.
 New screenshots may be contributed only after full redaction and rights review.
