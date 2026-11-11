@@ -6,10 +6,9 @@ const ENTITY_DOMAINS = {
   active_program: "sensor", boost_end: "sensor", last_message: "sensor",
   boost_30: "button", boost_60: "button", boost_90: "button", cancel_boost: "button",
 };
-const ROWS = ["temperature", "mode", "program", "boost", "status", "telemetry", "boost_end"];
 const TEXT = {
   en: {
-    climate: "Climate", temperature: "Target", apply: "Apply", mode: "Mode",
+    climate: "Climate", temperature: "Temperature", apply: "Apply", mode: "Mode",
     off: "Off", heat: "Heat", auto: "Auto", program: "Program", boost: "Boost",
     cancel: "Cancel", cancelLabel: "Cancel Boost and resume the schedule",
     humidity: "Humidity", heating: "Heating", idle: "Idle", unknown: "Unknown",
@@ -20,7 +19,8 @@ const TEXT = {
     invalid: "Check the selected value before applying.",
     loading: "Loading thermostats…", none: "No visible thermostats. Check availability, panel visibility and your entity permissions.",
     loadFailed: "Thermostats could not be loaded.", retry: "Retry", menu: "Open sidebar",
-    current: "Current temperature", featureName: "Smarther controls and status",
+    current: "Current temperature", target: "Target", setpoint: "Target temperature", views: "Thermostat views", statistics: "Statistics", info: "Info", decrease: "Decrease target temperature", increase: "Increase target temperature",
+    boostHelp: "Choose a duration, then start Boost.", startBoost: "Start Boost", controls: "Controls", lastLive: "Last live update", day: "Last 24 hours", week: "Last 7 days", today: "today", recorded: "Recorded minutes · gaps are excluded", minimum: "Minimum", maximum: "Maximum", loadingHistory: "Loading history…", noHistory: "History is unavailable.", emptyHistory: "No recorded data for this period.",
   },
   it: {
     climate: "Clima", temperature: "Temperatura", apply: "Applica", mode: "Modalità",
@@ -34,7 +34,8 @@ const TEXT = {
     invalid: "Controlla il valore selezionato prima di applicarlo.",
     loading: "Caricamento termostati…", none: "Nessun termostato visibile. Controlla disponibilità, visibilità pannello e permessi sulle entità.",
     loadFailed: "Impossibile caricare i termostati.", retry: "Riprova", menu: "Apri barra laterale",
-    current: "Temperatura attuale", featureName: "Smarther: controlli e stato",
+    current: "Temperatura attuale", target: "Imposta", setpoint: "Temperatura desiderata", views: "Viste termostato", statistics: "Statistiche", info: "Info", decrease: "Riduci temperatura desiderata", increase: "Aumenta temperatura desiderata",
+    boostHelp: "Scegli la durata, poi avvia Boost.", startBoost: "Avvia Boost", controls: "Comandi", lastLive: "Ultimo aggiornamento live", day: "Ultime 24 ore", week: "Ultimi 7 giorni", today: "oggi", recorded: "Minuti registrati · dati mancanti esclusi", minimum: "Minima", maximum: "Massima", loadingHistory: "Caricamento storico…", noHistory: "Storico non disponibile.", emptyHistory: "Nessun dato registrato nel periodo.",
   },
 };
 
@@ -115,202 +116,377 @@ function localDate(hass, value) {
   }).format(date);
 }
 
-const FEATURE_STYLE = `
-  :host { display:block; height:var(--feature-height,42px); color:var(--primary-text-color); font:inherit; }
-  .row { display:flex; align-items:center; gap:8px; height:100%; min-width:0; }
-  button, input, select { box-sizing:border-box; min-width:0; height:100%; border:0; border-radius:var(--feature-border-radius,12px); font:inherit; color:var(--primary-text-color); background:var(--secondary-background-color,#f1f3f5); pointer-events:auto; }
-  button { flex:1; padding:0 8px; cursor:pointer; }
-  button[aria-pressed=true] { color:var(--text-primary-color,#fff); background:var(--primary-color,#03a9f4); }
-  button:disabled { opacity:.45; cursor:default; }
-  button:focus-visible, input:focus-visible, select:focus-visible { outline:2px solid var(--primary-color,#03a9f4); outline-offset:-2px; }
-  input, select { flex:1; width:100%; padding:0 8px; }
-  label { display:flex; align-items:center; gap:6px; min-width:0; flex:3; height:100%; }
-  label span { flex-shrink:0; font-size:13px; }
-  .value { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
-  .blocked { color:var(--secondary-text-color); }
-  .error { color:var(--error-color,#db4437); white-space:normal; font-size:12px; }
-  .dot { width:8px; height:8px; border-radius:50%; background:var(--warning-color,#ff9800); flex-shrink:0; }
-  .fresh { background:var(--success-color,#43a047); }
-  @media (max-width:360px) { .row { gap:4px; } button { padding:0 5px; font-size:13px; } }
-`;
-
-class SmartherFeature extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: "open" });
-    for (const name of ["click", "change", "keydown", "pointerdown"]) {
-      this.shadowRoot.addEventListener(name, (event) => event.stopPropagation());
+const ICONS = {
+  climate: "M8 3h8v4H8z M6 7h12v14H6z M10 11h4 M10 15h4",
+  temperature: "M9 14V5a3 3 0 0 1 6 0v9a5 5 0 1 1-6 0 M12 8v10",
+  humidity: "M12 2C9 7 5 10 5 15a7 7 0 0 0 14 0c0-5-4-8-7-13 M8 16a4 4 0 0 0 4 4",
+  boost: "M13 2c2 6-3 6-1 10 1-2 3-3 4-5 5 6 4 14-4 15C3 21 3 14 7 9c-1 6 3 5 3 2 0-4 3-5 3-9",
+  program: "M4 5h16v16H4z M8 2v6 M16 2v6 M4 10h16 M8 14h3 M8 17h7",
+  statistics: "M4 21V11h4v10 M10 21V4h4v17 M16 21V8h4v13",
+  info: "M12 8v.1 M12 11v6 M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0",
+  plus: "M12 5v14 M5 12h14", minus: "M5 12h14", check: "M5 12l4 4L19 6",
+};
+function svgNode(tag, attributes = {}, text) {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+function icon(name) {
+  const svg = svgNode("svg", { viewBox: "0 0 24 24", "aria-hidden": "true", class: "icon" });
+  svg.append(svgNode("path", { d: ICONS[name] || ICONS.climate, fill: "none", stroke: "currentColor", "stroke-width": 1.6, "stroke-linecap": "round", "stroke-linejoin": "round" }));
+  return svg;
+}
+function number(value) {
+  return ["number", "string"].includes(typeof value) && String(value).trim() !== "" && Number.isFinite(Number(value)) ? Number(value) : null;
+}
+function historyRows(rows = []) {
+  return rows.map((row) => ({
+    time: typeof row.lu === "number" ? row.lu * 1000 : Date.parse(row.last_updated || row.last_changed),
+    state: row.s ?? row.state, attributes: row.a || row.attributes || {},
+  })).filter((row) => Number.isFinite(row.time)).sort((a, b) => a.time - b.time);
+}
+function dayKey(time, zone) {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(time);
+  return ["year", "month", "day"].map((part) => parts.find((p) => p.type === part).value).join("-");
+}
+function recordedHeating(rows, end, zone = "UTC") {
+  const today = dayKey(end, zone);
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(today + "T12:00:00Z");
+    date.setUTCDate(date.getUTCDate() - 6 + index);
+    return { day: date.toISOString().slice(0, 10), heating: 0, known: 0 };
+  });
+  const samples = historyRows(rows);
+  for (let i = 0; i < samples.length; i++) {
+    const sample = samples[i];
+    const live = Date.parse(sample.attributes.last_live_message || "");
+    const limit = number(sample.attributes.control_max_age_seconds);
+    const action = sample.attributes.hvac_action;
+    if (["unknown", "unavailable"].includes(sample.state) || !["heating", "idle", "off"].includes(action)
+      || !Number.isFinite(live) || !limit || limit <= 0) continue;
+    let start = Math.max(sample.time, live);
+    const stop = Math.min(samples[i + 1]?.time ?? end, end, live + limit * 1000);
+    while (start < stop) {
+      const key = dayKey(start, zone);
+      let boundary = stop;
+      if (dayKey(stop - 1, zone) !== key) {
+        let low = start, high = stop;
+        while (high - low > 1) {
+          const middle = Math.floor((low + high) / 2);
+          if (dayKey(middle, zone) === key) low = middle; else high = middle;
+        }
+        boundary = high;
+      }
+      const day = days.find((item) => item.day === key);
+      if (day) {
+        day.known += boundary - start;
+        if (action === "heating") day.heating += boundary - start;
+      }
+      start = boundary;
     }
   }
+  return days;
+}
 
+const FACE_STYLE = `
+  :host { display:block; min-width:0; color:var(--primary-text-color,#242a30); font-family:var(--ha-font-family,Roboto,sans-serif); }
+  * { box-sizing:border-box; }
+  .shell { background:var(--card-background-color,#fff); border:1px solid var(--divider-color,#e6e8eb); border-radius:20px; box-shadow:0 4px 18px #00000007; overflow:hidden; --accent:#ee943d; }
+  .head { display:flex; align-items:center; gap:12px; padding:19px 22px 0; }
+  .brand { width:25px; height:25px; color:var(--accent); }
+  h2 { font-size:16px; font-weight:600; margin:0; overflow-wrap:anywhere; letter-spacing:.1px; flex:1; }
+  .mode-label { font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--secondary-text-color,#7a8189); }
+  .body { display:grid; grid-template-columns:minmax(0,1fr) 4px 92px; min-height:326px; padding:14px 12px 10px 20px; gap:12px; }
+  .view { min-width:0; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:0 4px 5px; }
+  .dial { width:100%; max-width:300px; position:relative; aspect-ratio:260/230; }
+  .dial svg { display:block; width:100%; height:100%; }
+  .dial-face { position:absolute; inset:0; display:flex; align-items:center; flex-direction:column; justify-content:center; padding-top:10px; pointer-events:none; }
+  .eyebrow { text-transform:uppercase; font-size:10px; letter-spacing:1.3px; color:var(--secondary-text-color,#8a9097); }
+  .temperature { display:flex; align-items:flex-start; font-size:64px; font-weight:300; line-height:1.12; letter-spacing:-3px; margin:8px 0 4px; font-variant-numeric:tabular-nums; }
+  .temperature small { font-size:23px; letter-spacing:0; padding:9px 0 0 5px; }
+  .activity { display:flex; align-items:center; gap:5px; color:var(--accent); font-size:11px; }
+  .activity .icon { width:14px; height:14px; }
+  .target { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:-24px; position:relative; }
+  button,input,select { font:inherit; color:inherit; }
+  button { cursor:pointer; border:0; background:none; }
+  button:disabled { opacity:.38; cursor:default; }
+  button:focus-visible,input:focus-visible,select:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .round { display:grid; place-items:center; width:36px; height:36px; border:1px solid var(--divider-color,#e4e7eb); border-radius:50%; background:var(--card-background-color,#fff); }
+  .round .icon { width:15px; height:15px; }
+  .target-value { text-align:center; }
+  .target-value label { display:block; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--secondary-text-color,#8a9097); margin-bottom:2px; }
+  .target-value input { width:65px; padding:0; border:0; text-align:center; background:transparent; font-size:20px; font-weight:500; appearance:textfield; }
+  input::-webkit-inner-spin-button,input::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+  .target-value span { font-size:12px; }
+  .apply { margin-top:9px; min-height:32px; border-radius:16px; padding:5px 18px; font-size:11px; background:var(--accent); color:#fff; }
+  .apply:disabled { opacity:.4; }
+  .modes { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; justify-content:center; }
+  .modes button { border-radius:16px; padding:7px 11px; font-size:10px; color:var(--secondary-text-color,#737b83); }
+  .modes button[aria-pressed=true] { background:#ee943d18; color:#bc6b20; font-weight:600; }
+  .boost-track { border-radius:4px; background:var(--divider-color,#f0f1f3); margin:12px 0; position:relative; }
+  .boost-track.active { background:#ef886a; }
+  .rail { display:flex; flex-direction:column; justify-content:space-evenly; border-left:1px solid var(--divider-color,#f0f1f3); padding-left:8px; }
+  .rail button { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:4px; min-height:48px; border-radius:11px; padding:6px 2px; color:var(--secondary-text-color,#8a919b); position:relative; }
+  .rail button .icon { width:22px; height:22px; }
+  .rail button span { font-size:9px; line-height:1.1; }
+  .rail button[aria-pressed=true] { background:var(--secondary-background-color,#f7f8fa); color:var(--accent); }
+  .rail button[data-view=humidity] { --tab:#75aeca; }
+  .rail button[data-view=temperature] { --tab:#ee943d; }
+  .rail button[data-view=statistics] { --tab:#87ad88; }
+  .rail button[data-view=program] { --tab:#8c91b1; }
+  .rail button .icon { color:var(--tab,currentColor); }
+  .rail .badge { position:absolute; top:1px; right:8px; padding:2px 4px; background:#e57953; color:white; font-size:8px; border-radius:6px; }
+  .footer { display:flex; flex-wrap:wrap; justify-content:space-between; gap:9px; padding:12px 20px; border-top:1px solid var(--divider-color,#f0f1f3); font-size:10px; color:var(--secondary-text-color,#7d858e); }
+  .metric,.live { display:flex; align-items:center; gap:5px; }
+  .metric .icon { width:14px; height:14px; color:#7daec3; }
+  .dot { width:5px; height:5px; border-radius:50%; background:#cba060; flex-shrink:0; }
+  .dot.fresh { background:#8bad83; }
+  .blocked { color:var(--secondary-text-color,#8a9097); font-size:11px; text-align:center; margin:10px 0 0; }
+  .view-title { width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px; margin:8px 0 12px; }
+  h3 { margin:0; font-weight:500; font-size:14px; }
+  .period { font-size:9px; color:var(--secondary-text-color,#8a9097); }
+  .chart { width:100%; min-height:140px; }
+  .chart svg { width:100%; display:block; }
+  .summary { width:100%; display:flex; justify-content:space-between; gap:8px; margin-top:12px; }
+  .summary div { font-size:10px; color:var(--secondary-text-color,#8a9097); }
+  .summary strong { display:block; color:var(--primary-text-color,#333); font-size:15px; font-weight:500; margin-top:4px; }
+  .empty { font-size:11px; color:var(--secondary-text-color,#8a9097); text-align:center; padding:28px 8px; line-height:1.6; }
+  .big { font-size:42px; font-weight:300; letter-spacing:-1px; margin:10px 0 4px; }
+  .big small { font-size:15px; letter-spacing:0; color:var(--secondary-text-color,#8a9097); }
+  .options { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:20px 0 10px; }
+  .options button { border:1px solid var(--divider-color,#e5e7eb); border-radius:12px; padding:12px 15px; font-size:13px; }
+  .options button[aria-pressed=true] { border-color:var(--accent); color:#c17a35; background:#ee943d10; }
+  select { width:100%; max-width:240px; padding:12px; border-radius:10px; border:1px solid var(--divider-color,#e4e7eb); background:var(--card-background-color,#fff); margin:20px 0 10px; }
+  .secondary { min-height:36px; margin-top:8px; font-size:11px; color:var(--secondary-text-color,#8a9097); }
+  dl { width:100%; font-size:11px; line-height:1.6; margin:15px 0; }
+  dt { color:var(--secondary-text-color,#8a9097); margin-top:10px; } dd { margin:2px 0 0; overflow-wrap:anywhere; }
+  .error { color:var(--error-color,#c54d4d); padding:10px; font-size:11px; line-height:1.5; }
+  @media(max-width:430px) { .head { padding:16px 16px 0; } .body { grid-template-columns:minmax(0,1fr) 3px 66px; gap:8px; padding:9px 8px 7px 12px; min-height:318px; } .rail { padding-left:4px; } .rail button span { font-size:8px; } .rail button .icon { width:20px; height:20px; } .temperature { font-size:49px; } .temperature small { font-size:17px; padding-top:7px; } .target { gap:7px; margin-top:-12px; } .target-value input { font-size:18px; width:55px; } .round { width:30px; height:30px; } .modes button { padding:7px 8px; } .footer { padding:11px 14px; gap:6px; } .view-title { flex-direction:column; align-items:flex-start; } .summary strong { font-size:13px; } }
+`;
+
+class SmartherThermostat extends HTMLElement {
+  constructor() {
+    super(); this.attachShadow({ mode: "open" }); this._view = "climate"; this._boostMinutes = 30; this._history = {}; this._historyLoading = new Set();
+  }
   setConfig(config) {
-    if (!config || !ROWS.includes(config.row || "status")) throw new Error("Unknown Smarther feature row");
-    this._config = { row: "status", ...config, entities: entityMap(config.entities) };
+    this._device = config.device;
+    this._ids = entityMap(config.device.entities);
     this._signature = undefined;
     this._render();
   }
-
   set hass(hass) { this._hass = hass; this._render(); }
-  set context(context) { this._context = context; this._render(); }
-
-  static getStubConfig(hass, context) {
-    return { type: "custom:smarther-feature", row: "status", entities: { climate: context.entity_id } };
-  }
-
   connectedCallback() {
-    this._timer = window.setInterval(() => this._render(), 15000);
+    this._timer = window.setInterval(() => { this._render(); if (["temperature", "humidity", "statistics"].includes(this._view)) this._loadHistory(); }, 15000);
     this._render();
   }
-
-  disconnectedCallback() {
-    window.clearInterval(this._timer);
+  disconnectedCallback() { window.clearInterval(this._timer); }
+  _button(text, action, className = "") {
+    const button = element("button", text, className); button.type = "button";
+    button.addEventListener("click", action); return button;
   }
-
-  _render() {
-    if (!this._config || !this._hass || !this._context || !this.isConnected) return;
-    const hass = this._hass;
-    const t = words(hass);
-    const climateId = this._context.entity_id;
-    const state = smartherState(hass, climateId);
-    const ids = this._config.entities;
-    const status = gate(hass, climateId);
-    const live = telemetry(state);
-    const signature = JSON.stringify([
-      this._config.row, hass.language, status, live, this._busy, this._error,
-      state, ...Object.values(ids).map((id) => hass.states?.[id]),
-    ]);
-    if (signature === this._signature) return;
-    // Do not reset an in-progress selection on unrelated state updates.
-    if (this.shadowRoot.activeElement && status === "ready" && !this._busy && !this._error) return;
+  _activate(view) { this._view = view; this._error = undefined; this._render(true); if (["temperature", "humidity", "statistics"].includes(view)) this._loadHistory(); }
+  _render(force = false) {
+    if (!this._hass || !this._ids || !this.isConnected) return;
+    const state = smartherState(this._hass, this._ids.climate);
+    const status = gate(this._hass, this._ids.climate);
+    if (status !== "ready") this._draft = undefined;
+    const signature = JSON.stringify([this._hass.language, this._view, this._draft, this._boostMinutes, this._busy, this._error,
+      this._historyVersion, status, Math.floor(Date.now() / 15000), ...Object.values(this._ids).map(id => this._hass.states[id])]);
+    if (!force && (signature === this._signature || (status === "ready" && !this._busy && !this._error
+      && ["INPUT", "SELECT"].includes(this.shadowRoot.activeElement?.tagName)))) return;
     this._signature = signature;
-    const root = this.shadowRoot;
-    const row = element("div", undefined, "row");
-    root.replaceChildren(element("style", FEATURE_STYLE), row);
-    if (!state || (ids.climate && ids.climate !== climateId)) {
-      row.append(element("span", t.unavailable, "value blocked"));
-      return;
-    }
-    if (this._error) {
-      const message = element("span", t[this._error], "value error");
-      message.setAttribute("role", "alert");
-      message.title = t[this._error];
-      const dismiss = element("button", "×");
-      dismiss.setAttribute("aria-label", t.cancel);
-      dismiss.onclick = () => { this._error = undefined; this._signature = undefined; this._render(); };
-      row.append(message, dismiss);
-      return;
-    }
-    const kind = this._config.row;
-    const sensor = (key) => sameDevice(hass, climateId, ids[key]) ? displayState(hass, ids[key], t.unknown) : t.unknown;
-    const label = (value, className = "value") => { const node = element("span", value, className); node.title = value; row.append(node); };
-
-    if (kind === "status") {
-      label(`${t.humidity}: ${sensor("humidity")}`);
-      const action = state.attributes.hvac_action;
-      label(action === "heating" ? t.heating : action === "idle" ? t.idle : action === "off" ? t.off : t.unknown);
-    } else if (kind === "telemetry") {
-      row.append(element("span", undefined, `dot ${live.key === "fresh" ? "fresh" : ""}`));
-      label(`${t[live.key]}${live.minutes !== undefined ? ` · ${live.minutes} ${t.ago}` : ""}`);
-      row.title = localDate(hass, state.attributes.last_live_message);
-    } else if (kind === "boost_end") {
-      label(state.attributes.vendor_mode === "BOOST" ? `${t.end}: ${sensor("boost_end")}` : t.noBoost);
-    } else if (status !== "ready") {
-      const current = kind === "temperature" ? state.attributes.temperature ?? t.unknown
-        : kind === "program" ? sensor("active_program") : kind === "mode" ? t[state.state] || t.unknown : "";
-      label(`${t[kind]}${current !== "" ? `: ${current}` : ""} · ${t[status]}`, "value blocked");
-    } else if (this._busy) {
-      label(t.pending, "value blocked");
-    } else if (kind === "temperature") {
-      const input = element("input");
-      input.type = "number";
-      input.min = state.attributes.min_temp;
-      input.max = state.attributes.max_temp;
-      input.step = state.attributes.target_temp_step || 0.1;
-      input.value = state.attributes.temperature ?? "";
-      input.setAttribute("aria-label", t.temperature);
-      const control = element("label");
-      control.append(element("span", t.temperature), input);
-      row.append(control);
-      this._button(row, t.apply, () => {
-        const value = Number(input.value);
-        const attr = this._hass.states[climateId]?.attributes || {};
-        if (!input.value || !input.checkValidity() || !Number.isFinite(value)
-          || value < attr.min_temp || value > attr.max_temp) return this._invalid();
-        return this._command("climate", "set_temperature", climateId, { temperature: value });
-      });
-    } else if (kind === "mode") {
-      for (const mode of ["off", "heat", "auto"]) {
-        const button = this._button(row, t[mode], () => {
-          if (!this._hass.states[climateId]?.attributes.hvac_modes?.includes(mode)) return this._invalid();
-          return this._command("climate", "set_hvac_mode", climateId, { hvac_mode: mode });
-        });
-        button.disabled = !state.attributes.hvac_modes?.includes(mode);
-        button.setAttribute("aria-pressed", String(state.state === mode));
+    const t = words(this._hass), shell = element("article", undefined, "shell");
+    const head = element("div", undefined, "head"), brand = icon("climate"); brand.classList.add("brand");
+    head.append(brand, element("h2", this._device.title), element("span", t[state?.state] || t.unavailable, "mode-label"));
+    const body = element("div", undefined, "body"), view = element("div", undefined, "view");
+    const track = element("div", undefined, `boost-track${state?.attributes.vendor_mode === "BOOST" ? " active" : ""}`); track.setAttribute("aria-hidden", "true");
+    const rail = element("nav", undefined, "rail"); rail.setAttribute("aria-label", t.views);
+    for (const name of ["climate", "temperature", "humidity", "program", "boost", "statistics", "info"]) {
+      // Climate is the return action on the active chart's shortcut, matching
+      // the original card without an extra permanent toolbar row.
+      if (name === "climate") continue;
+      const selected = this._view === name;
+      const button = this._button(undefined, () => this._activate(selected ? "climate" : name));
+      button.dataset.view = name; button.setAttribute("aria-pressed", String(selected));
+      button.setAttribute("aria-label", selected ? `${t.climate}: ${t[name]}` : t[name]);
+      button.append(icon(selected ? "climate" : name), element("span", selected ? t.climate : t[name]));
+      const end = Date.parse(this._hass.states[this._ids.boost_end]?.state || "");
+      if (name === "boost" && state?.attributes.vendor_mode === "BOOST" && Number.isFinite(end)) {
+        button.append(element("span", String(Math.max(0, Math.ceil((end - Date.now()) / 60000))), "badge"));
       }
-    } else if (kind === "program") {
-      const program = hass.states[ids.program];
-      if (!controlAvailable(program) || !sameDevice(hass, climateId, ids.program)) { label(`${t.program}: ${sensor("active_program")}`, "value blocked"); return; }
-      const select = element("select");
-      select.setAttribute("aria-label", t.program);
-      for (const option of program.attributes.options || []) select.append(new Option(option, option));
-      select.value = program.state;
-      row.append(select);
-      this._button(row, t.apply, () => {
-        if (!this._hass.states[ids.program]?.attributes.options?.includes(select.value)) return this._invalid();
-        return this._command("select", "select_option", ids.program, { option: select.value });
-      });
-    } else if (kind === "boost") {
-      for (const minutes of [30, 60, 90, 0]) {
-        const id = ids[minutes ? `boost_${minutes}` : "cancel_boost"];
-        const button = this._button(row, minutes ? `${minutes}′` : t.cancel, () => {
-          if (!minutes && (this._hass.states[climateId]?.attributes.vendor_mode !== "BOOST"
-            || !usable(this._hass.states[ids.active_program])
-            || !sameDevice(this._hass, climateId, ids.active_program))) return this._invalid();
-          return this._command("button", "press", id);
-        });
-        button.setAttribute("aria-label", minutes ? `Boost ${minutes} min` : t.cancelLabel);
-        button.disabled = !controlAvailable(hass.states[id]) || !sameDevice(hass, climateId, id)
-          || (!minutes && (state.attributes.vendor_mode !== "BOOST"
-            || !usable(hass.states[ids.active_program]) || !sameDevice(hass, climateId, ids.active_program)));
-      }
+      rail.append(button);
     }
+    const panelId = `view-${this._device.entry_id.replace(/[^a-z0-9]/gi, "")}`;
+    view.id = panelId; view.setAttribute("role", "region"); view.setAttribute("aria-label", t[this._view]);
+    for (const button of rail.children) button.setAttribute("aria-controls", panelId);
+    if (this._view === "climate") this._dial(view, state, status);
+    else if (this._view === "boost") this._boost(view, state, status);
+    else if (this._view === "program") this._program(view, status);
+    else if (this._view === "info") this._info(view, state, status);
+    else this._chart(view);
+    if (this._error) { const error = element("div", t[this._error], "error"); error.setAttribute("role", "alert"); view.append(error); }
+    body.append(view, track, rail);
+    const footer = element("div", undefined, "footer"), humidity = element("span", undefined, "metric");
+    humidity.append(icon("humidity"), document.createTextNode(this._sensor("humidity")));
+    const live = telemetry(state), notice = element("span", undefined, "live");
+    notice.append(element("span", undefined, `dot${live.key === "fresh" ? " fresh" : ""}`), document.createTextNode(
+      `${status === "readOnly" ? t.readOnly : t[live.key]}${live.minutes !== undefined ? ` · ${live.minutes} ${t.ago}` : ""}`));
+    footer.append(humidity, notice); shell.append(head, body, footer);
+    this.shadowRoot.replaceChildren(element("style", FACE_STYLE), shell);
   }
-
-  _button(row, text, onClick) {
-    const button = element("button", text);
-    button.type = "button";
-    button.addEventListener("click", (event) => { event.stopPropagation(); onClick(); });
-    row.append(button);
-    return button;
-  }
-
-  _invalid() {
-    this._error = "invalid";
-    this._render();
-  }
-
-  async _command(domain, service, entityId, data = {}) {
-    // Recheck at the gesture boundary, including when a control was focused as telemetry expired.
-    const climateId = this._context.entity_id;
-    if (this._busy || gate(this._hass, climateId) !== "ready"
-      || !entityId?.startsWith(`${domain}.`) || !controlAvailable(this._hass.states[entityId])
-      || !sameDevice(this._hass, climateId, entityId)) {
-      this._error = "failed";
-      this._render();
-      return;
+  _sensor(key) { return sameDevice(this._hass, this._ids.climate, this._ids[key]) ? displayState(this._hass, this._ids[key], words(this._hass).unknown) : words(this._hass).unknown; }
+  _format(value, digits = 1) { return number(value) === null ? "—" : new Intl.NumberFormat(this._hass.language, { maximumFractionDigits: digits }).format(Number(value)); }
+  _dial(view, state, status) {
+    const t = words(this._hass), attr = state?.attributes || {}, unit = this._hass.config?.unit_system?.temperature || "°C";
+    const dial = element("div", undefined, "dial"), svg = svgNode("svg", { viewBox: "0 0 260 230", "aria-hidden": "true" });
+    const point = (angle, radius = 99) => [130 + radius * Math.cos(angle * Math.PI / 180), 124 + radius * Math.sin(angle * Math.PI / 180)];
+    const arc = (angle) => { const a = point(140), b = point(angle); return `M${a[0]} ${a[1]} A99 99 0 ${angle - 140 > 180 ? 1 : 0} 1 ${b[0]} ${b[1]}`; };
+    for (let i = 0; i <= 20; i++) { const a = point(140 + i * 13, 110), b = point(140 + i * 13, 114); svg.append(svgNode("path", { d: `M${a} L${b}`, stroke: "var(--divider-color,#e8eaed)", "stroke-width": 1 })); }
+    svg.append(svgNode("path", { d: arc(400), fill: "none", stroke: "var(--divider-color,#eff0f2)", "stroke-width": 10, "stroke-linecap": "round" }));
+    const target = number(this._draft ?? attr.temperature), min = number(attr.min_temp), max = number(attr.max_temp);
+    if (usable(state) && target !== null && min !== null && max !== null && max > min) {
+      const angle = 140 + 260 * Math.max(0.001, Math.min(1, (target - min) / (max - min)));
+      const color = state.state === "off" ? "#a5adb5" : attr.hvac_action === "heating" ? "#ee943d" : "#d6b76e";
+      svg.append(svgNode("path", { d: arc(angle), fill: "none", stroke: color, "stroke-width": 10, "stroke-linecap": "round" }));
+      const marker = point(angle); svg.append(svgNode("circle", { cx: marker[0], cy: marker[1], r: 7, fill: "var(--card-background-color,#fff)", stroke: color, "stroke-width": 3 }));
     }
-    this._busy = true;
-    this._error = undefined;
-    this._render();
+    const face = element("div", undefined, "dial-face"), temperature = element("div", this._format(usable(state) ? attr.current_temperature : null), "temperature");
+    temperature.append(element("small", unit));
+    const action = attr.hvac_action, activity = element("span", undefined, "activity");
+    activity.append(icon("boost"), document.createTextNode(usable(state) ? t[action] || t.unknown : t.unavailable));
+    face.append(element("span", t.current, "eyebrow"), temperature, activity); dial.append(svg, face); view.append(dial);
+    const targetRow = element("div", undefined, "target");
+    const adjust = (amount) => {
+      const value = number(this._draft ?? this._hass.states[this._ids.climate]?.attributes.temperature);
+      const attributes = this._hass.states[this._ids.climate]?.attributes || {};
+      if (value === null || gate(this._hass, this._ids.climate) !== "ready") return;
+      this._draft = Math.round(Math.max(attributes.min_temp, Math.min(attributes.max_temp, value + amount * (number(attributes.target_temp_step) || 0.1))) * 1000) / 1000;
+      this._render(true);
+    };
+    const minus = this._button(undefined, () => adjust(-1), "round"), plus = this._button(undefined, () => adjust(1), "round");
+    minus.append(icon("minus")); plus.append(icon("plus")); minus.setAttribute("aria-label", t.decrease); plus.setAttribute("aria-label", t.increase);
+    minus.disabled = plus.disabled = status !== "ready" || this._busy || target === null;
+    const center = element("div", undefined, "target-value"), input = element("input");
+    input.type = "number"; input.min = attr.min_temp; input.max = attr.max_temp; input.step = attr.target_temp_step || 0.1; input.value = target ?? "";
+    input.disabled = status !== "ready" || this._busy; input.setAttribute("aria-label", t.setpoint);
+    input.addEventListener("input", () => { this._draft = input.value; });
+    input.addEventListener("keydown", (event) => { if (event.key === "Enter") this._command("climate", "set_temperature", this._ids.climate, { temperature: number(input.value) }); });
+    center.append(element("label", t.target), input, element("span", unit)); targetRow.append(minus, center, plus); view.append(targetRow);
+    const apply = this._button(this._busy ? t.pending : t.apply, () => this._command("climate", "set_temperature", this._ids.climate,
+      { temperature: number(this.shadowRoot.querySelector("input")?.value) }), "apply");
+    apply.disabled = status !== "ready" || this._busy; view.append(apply);
+    const modes = element("div", undefined, "modes");
+    for (const mode of ["off", "heat", "auto"]) {
+      const button = this._button(t[mode], () => this._command("climate", "set_hvac_mode", this._ids.climate, { hvac_mode: mode }));
+      button.setAttribute("aria-pressed", String(state?.state === mode)); button.disabled = status !== "ready" || this._busy || !attr.hvac_modes?.includes(mode); modes.append(button);
+    }
+    view.append(modes); if (status !== "ready") view.append(element("p", t[status], "blocked"));
+  }
+  _boost(view, state, status) {
+    const t = words(this._hass); view.append(element("h3", "Boost"), element("p", t.boostHelp, "blocked"));
+    const choices = element("div", undefined, "options");
+    for (const minutes of [30, 60, 90]) { const button = this._button(`${minutes} min`, () => { this._boostMinutes = minutes; this._render(true); }); button.setAttribute("aria-pressed", String(minutes === this._boostMinutes)); choices.append(button); }
+    const start = this._button(this._busy ? t.pending : t.startBoost, () => this._command("button", "press", this._ids[`boost_${this._boostMinutes}`]), "apply");
+    start.disabled = status !== "ready" || this._busy || !controlAvailable(this._hass.states[this._ids[`boost_${this._boostMinutes}`]]);
+    const cancel = this._button(t.cancelLabel, () => this._command("button", "press", this._ids.cancel_boost), "secondary");
+    cancel.disabled = status !== "ready" || this._busy || state?.attributes.vendor_mode !== "BOOST" || !controlAvailable(this._hass.states[this._ids.cancel_boost]);
+    view.append(choices, start, cancel, element("p", state?.attributes.vendor_mode === "BOOST" ? `${t.end}: ${this._sensor("boost_end")}` : t.noBoost, "blocked"));
+    if (status !== "ready") view.append(element("p", t[status], "blocked"));
+  }
+  _program(view, status) {
+    const t = words(this._hass), state = this._hass.states[this._ids.program];
+    view.append(element("h3", t.program), element("div", this._sensor("active_program"), "big"));
+    if (!controlAvailable(state) || !sameDevice(this._hass, this._ids.climate, this._ids.program)) { view.append(element("p", t.unavailable, "blocked")); return; }
+    const select = element("select"); select.setAttribute("aria-label", t.program);
+    for (const value of state.attributes.options || []) select.append(new Option(value, value)); select.value = state.state;
+    select.disabled = status !== "ready" || this._busy;
+    const apply = this._button(this._busy ? t.pending : t.apply, () => this._command("select", "select_option", this._ids.program, { option: select.value }), "apply");
+    apply.disabled = status !== "ready" || this._busy; view.append(select, apply);
+    if (status !== "ready") view.append(element("p", t[status], "blocked"));
+  }
+  _info(view, state, status) {
+    const t = words(this._hass), details = element("dl"); view.append(element("h3", t.info));
+    for (const [label, value] of [[t.mode, t[state?.state] || t.unavailable], [t.controls, status === "ready" ? t.fresh : t[status]],
+      [t.lastLive, localDate(this._hass, state?.attributes.last_live_message)], [t.end, state?.attributes.vendor_mode === "BOOST" ? this._sensor("boost_end") : t.noBoost]]) details.append(element("dt", label), element("dd", value));
+    view.append(details);
+  }
+  async _loadHistory(force = false) {
+    const kind = this._view === "statistics" ? "statistics" : "chart";
+    if (!this._hass || !this._ids || this._historyLoading.has(kind) || (!force && Date.now() - (this._history[kind]?.fetched || 0) < 60000)) return;
+    this._historyLoading.add(kind);
+    const end = Date.now(), start = end - (kind === "statistics" ? 7 : 1) * 86400000;
     try {
-      // This does not assert a physical outcome. Displayed state always comes from HA telemetry.
-      await this._hass.callService(domain, service, { ...data, entity_id: entityId });
-    } catch {
-      this._error = "failed";
-    } finally {
-      this._busy = false;
-      this._render();
+      const ids = [this._ids.climate, ...(kind === "chart" && this._ids.humidity ? [this._ids.humidity] : [])];
+      const data = await this._hass.callWS({ type: "history/history_during_period", start_time: new Date(start).toISOString(), end_time: new Date(end).toISOString(),
+        entity_ids: ids, include_start_time_state: true, significant_changes_only: false, minimal_response: false, no_attributes: false });
+      this._history[kind] = { data, start, end, fetched: Date.now() };
+    } catch { this._history[kind] = { error: true, fetched: Date.now() }; }
+    finally { this._historyLoading.delete(kind); this._historyVersion = (this._historyVersion || 0) + 1; this._render(); }
+  }
+  _chart(view) {
+    const t = words(this._hass), stats = this._view === "statistics", cached = this._history[stats ? "statistics" : "chart"];
+    const title = element("div", undefined, "view-title"); title.append(element("h3", stats ? t.heating : t[this._view]), element("span", stats ? t.week : t.day, "period")); view.append(title);
+    if (!cached || cached.error) {
+      view.append(element("div", !cached ? t.loadingHistory : t.noHistory, "empty"));
+      if (cached?.error) view.append(this._button(t.retry, () => this._loadHistory(true), "secondary")); return;
     }
+    if (stats) { this._statistics(view, cached); return; }
+    const humidity = this._view === "humidity", id = humidity ? this._ids.humidity : this._ids.climate, unit = humidity ? "%" : this._hass.config?.unit_system?.temperature || "°C";
+    const points = historyRows(cached.data?.[id]).map(row => ({ time: Math.max(cached.start, row.time), value: ["unknown", "unavailable"].includes(row.state) ? null : number(humidity ? row.state : row.attributes.current_temperature) }));
+    const values = points.map(p => p.value).filter(v => v !== null);
+    if (!values.length) { view.append(element("div", t.emptyHistory, "empty")); return; }
+    const min = values.reduce((a, b) => Math.min(a, b), Infinity), max = values.reduce((a, b) => Math.max(a, b), -Infinity), span = Math.max(max - min, humidity ? 4 : 1), low = min - span * 0.2, high = max + span * 0.2;
+    const chart = element("div", undefined, "chart"), svg = svgNode("svg", { viewBox: "0 0 300 170", role: "img", "aria-label": `${t[this._view]} · ${t.day}` });
+    const color = humidity ? "#76acc8" : "#e9a04f", y = v => 135 - (v - low) / (high - low) * 110;
+    for (let i = 0; i < 4; i++) { const yy = 20 + i * 38; svg.append(svgNode("line", { x1: 10, y1: yy, x2: 290, y2: yy, stroke: "var(--divider-color,#eef0f2)", "stroke-width": 1 })); }
+    let segment = [];
+    const flush = () => {
+      if (segment.length > 1) {
+        svg.append(svgNode("polygon", { points: `${segment[0].split(",")[0]},140 ${segment.join(" ")} ${segment[segment.length - 1].split(",")[0]},140`, fill: color, "fill-opacity": 0.12 }));
+        svg.append(svgNode("polyline", { points: segment.join(" "), fill: "none", stroke: color, "stroke-width": 2.2, "stroke-linejoin": "round" }));
+      } else if (segment.length) { const [cx, cy] = segment[0].split(","); svg.append(svgNode("circle", { cx, cy, r: 3, fill: color })); }
+      segment = [];
+    };
+    for (const point of points) { if (point.value === null) { flush(); continue; } segment.push(`${10 + (point.time - cached.start) / (cached.end - cached.start) * 280},${y(point.value)}`); } flush();
+    const formatTime = time => new Intl.DateTimeFormat(this._hass.language, { hour: "2-digit", minute: "2-digit", timeZone: this._hass.config?.time_zone }).format(time);
+    svg.append(svgNode("text", { x: 10, y: 160, fill: "var(--secondary-text-color,#9098a0)", "font-size": 9 }, formatTime(cached.start)), svgNode("text", { x: 290, y: 160, "text-anchor": "end", fill: "var(--secondary-text-color,#9098a0)", "font-size": 9 }, formatTime(cached.end)));
+    chart.append(svg); view.append(chart);
+    const summary = element("div", undefined, "summary");
+    for (const [name, value] of [[t.minimum, min], [t.maximum, max]]) { const item = element("div", name); item.append(element("strong", `${this._format(value)} ${unit}`)); summary.append(item); } view.append(summary);
+  }
+  _statistics(view, cached) {
+    const t = words(this._hass), days = recordedHeating(cached.data?.[this._ids.climate] || [], cached.end, this._hass.config?.time_zone || "UTC");
+    if (!days.some(day => day.known)) { view.append(element("div", t.emptyHistory, "empty")); return; }
+    const today = days[6], big = element("div", today.known ? String(Math.round(today.heating / 60000)) : "—", "big"); big.append(element("small", ` min · ${t.today}`)); view.append(big);
+    const svg = svgNode("svg", { viewBox: "0 0 300 140", style: "width:100%;height:auto", role: "img", "aria-label": t.recorded });
+    const max = Math.max(60 * 60000, ...days.map(d => d.heating));
+    days.forEach((day, index) => {
+      const x = 8 + index * 42, height = day.heating / max * 75;
+      svg.append(svgNode("rect", { x, y: 100 - Math.max(2, height), width: 24, height: Math.max(2, height), rx: 4, fill: day.known ? "#9cb798" : "var(--divider-color,#e8ebed)" }));
+      svg.append(svgNode("text", { x: x + 12, y: 92 - height, "text-anchor": "middle", "font-size": 9, fill: "var(--secondary-text-color,#889099)" }, day.known ? String(Math.round(day.heating / 60000)) : "—"));
+      svg.append(svgNode("text", { x: x + 12, y: 122, "text-anchor": "middle", "font-size": 9, fill: "var(--secondary-text-color,#889099)" }, new Intl.DateTimeFormat(this._hass.language, { weekday: "short", timeZone: "UTC" }).format(new Date(day.day + "T12:00:00Z"))));
+    }); view.append(svg, element("p", t.recorded, "blocked"));
+  }
+  async _command(domain, service, entityId, data = {}) {
+    const climate = this._hass.states[this._ids.climate], attr = climate?.attributes || {}, target = this._hass.states[entityId];
+    let valid = false;
+    if (domain === "climate" && entityId === this._ids.climate) {
+      if (service === "set_temperature") valid = data.temperature !== null && Number.isFinite(data.temperature) && data.temperature >= attr.min_temp && data.temperature <= attr.max_temp;
+      if (service === "set_hvac_mode") valid = attr.hvac_modes?.includes(data.hvac_mode);
+    } else if (domain === "select" && service === "select_option" && entityId === this._ids.program) valid = target?.attributes.options?.includes(data.option);
+    else if (domain === "button" && service === "press") {
+      valid = ["boost_30", "boost_60", "boost_90", "cancel_boost"].some(key => this._ids[key] === entityId);
+      if (entityId === this._ids.cancel_boost) valid = attr.vendor_mode === "BOOST" && usable(this._hass.states[this._ids.active_program]) && sameDevice(this._hass, this._ids.climate, this._ids.active_program);
+    }
+    if (this._busy || gate(this._hass, this._ids.climate) !== "ready" || !entityId?.startsWith(`${domain}.`)
+      || !valid || !controlAvailable(target) || !sameDevice(this._hass, this._ids.climate, entityId)) {
+      this._error = "failed"; this._render(true); return;
+    }
+    this._busy = true; this._error = undefined; this._render(true);
+    try { await this._hass.callService(domain, service, { ...data, entity_id: entityId }); this._draft = undefined; }
+    catch { this._error = "failed"; }
+    finally { this._busy = false; this._render(true); }
   }
 }
 
@@ -319,12 +495,8 @@ const PANEL_STYLE = `
   header { display:flex; align-items:center; gap:16px; padding:12px 16px; background:var(--card-background-color,#fff); border-bottom:1px solid var(--divider-color,#ddd); }
   h1 { margin:0; font-size:20px; font-weight:500; }
   header button { border:0; background:transparent; color:inherit; font-size:24px; width:44px; height:44px; cursor:pointer; }
-  main { padding:16px; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr)); gap:16px; align-items:start; max-width:1200px; margin:auto; }
-  section { min-width:0; max-width:560px; }
-  .widget { box-sizing:border-box; border:1px solid var(--divider-color,#ddd); border-radius:var(--ha-card-border-radius,12px); background:var(--card-background-color,#fff); padding:16px; }
-  h2 { margin:0 0 8px; font-size:18px; overflow-wrap:anywhere; }
-  .reading { margin:0 0 16px; color:var(--secondary-text-color); }
-  smarther-feature { --feature-height:42px; margin-top:8px; }
+  main { padding:16px; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr)); gap:16px; align-items:start; max-width:1380px; margin:auto; }
+  section { min-width:0; max-width:660px; }
   .notice { grid-column:1/-1; padding:16px; }
   .retry { padding:12px; cursor:pointer; }
 `;
@@ -334,7 +506,6 @@ class SmartherPanel extends HTMLElement {
     super();
     this.attachShadow({ mode: "open" });
     this._cards = [];
-    this._fallbacks = [];
   }
 
   set hass(hass) {
@@ -342,7 +513,6 @@ class SmartherPanel extends HTMLElement {
     const registryChanged = this._hass?.entities !== hass.entities;
     this._hass = hass;
     for (const card of this._cards) card.hass = hass;
-    this._updateReadings();
     if (languageChanged && this._entries) this._render();
     if (this.isConnected && (registryChanged || !this._entries)) this._load();
   }
@@ -364,14 +534,6 @@ class SmartherPanel extends HTMLElement {
     if (!this._entries) this._render();
     try {
       const result = await this._hass.callWS({ type: INFO_COMMAND });
-      // The public card helpers are available only after HA's dashboard runtime
-      // has loaded. Never load private HA modules or require visiting a dashboard.
-      if (this._helpers === undefined) {
-        this._helpers = null;
-        if (typeof window.loadCardHelpers === "function") {
-          try { this._helpers = await window.loadCardHelpers(); } catch { /* Standalone widget below. */ }
-        }
-      }
       if (!this.isConnected) return;
       this._error = false;
       this._entries = result.entries.filter((entry) => entityMap(entry.entities).climate);
@@ -397,7 +559,6 @@ class SmartherPanel extends HTMLElement {
     header.append(menu, element("h1", "Smarther"));
     const main = element("main");
     this._cards = [];
-    this._fallbacks = [];
     this.shadowRoot.replaceChildren(element("style", PANEL_STYLE), header, main);
     if (this._error || !this._entries?.length) {
       const notice = element("div", this._error ? t.loadFailed : this._entries ? t.none : t.loading, "notice");
@@ -415,50 +576,15 @@ class SmartherPanel extends HTMLElement {
       const section = element("section");
       section.setAttribute("aria-label", device.title);
       main.append(section);
-      if (this._helpers) {
-        try {
-          const card = this._helpers.createCardElement({
-            type: "tile", entity: ids.climate, name: device.title,
-            state_content: ["current_temperature", "temperature"],
-            tap_action: { action: "none" }, icon_tap_action: { action: "none" },
-            features_position: "bottom",
-            features: ROWS.map((row) => ({ type: "custom:smarther-feature", row, entities: ids })),
-          });
-          card.hass = this._hass;
-          section.append(card);
-          this._cards.push(card);
-          continue;
-        } catch { /* Standalone rendering remains available on every entry route. */ }
-      }
-      section.className = "widget";
-      const reading = element("p", "", "reading");
-      section.append(element("h2", device.title), reading);
-      this._fallbacks.push({ id: ids.climate, reading });
-      for (const row of ROWS) {
-        const feature = document.createElement("smarther-feature");
-        feature.setConfig({ row, entities: ids });
-        feature.context = { entity_id: ids.climate };
-        feature.hass = this._hass;
-        section.append(feature);
-        this._cards.push(feature);
-      }
+      const widget = document.createElement("smarther-thermostat");
+      widget.setConfig({ device: { ...device, entities: ids } });
+      widget.hass = this._hass;
+      section.append(widget);
+      this._cards.push(widget);
     }
-    this._updateReadings();
   }
 
-  _updateReadings() {
-    if (!this._hass) return;
-    const t = words(this._hass);
-    for (const { id, reading } of this._fallbacks) {
-      const state = this._hass.states[id];
-      const value = state?.attributes.current_temperature;
-      const unit = this._hass.config?.unit_system?.temperature || "°C";
-      reading.textContent = `${t.current}: ${usable(state) && Number.isFinite(value)
-        ? new Intl.NumberFormat(this._hass.language).format(value) + " " + unit : t.unavailable}`;
-    }
-  }
 }
 
-if (!customElements.get("smarther-feature")) customElements.define("smarther-feature", SmartherFeature);
+if (!customElements.get("smarther-thermostat")) customElements.define("smarther-thermostat", SmartherThermostat);
 if (!customElements.get("smarther-panel")) customElements.define("smarther-panel", SmartherPanel);
-

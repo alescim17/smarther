@@ -31,25 +31,43 @@ Registry/visibility metadata refreshes while the panel is open, at most every
 30 seconds; normal entity-state updates remain live. If the last device is
 hidden, the menu entry is removed immediately.
 
-## Climate widget and native Tile
+## Thermostat face and statistics
 
-The panel shows current and target temperature, Off/Heat/Auto, program selection,
-Boost 30/60/90 and cancel, humidity, heating, Boost end and telemetry freshness.
-Select a temperature/program and press **Apply**; selecting alone sends nothing.
-Mode and Boost buttons require an explicit click. State is never updated
-optimistically: the displayed outcome comes from Home Assistant telemetry.
+The compact face follows the original Smarther card's visual structure: a large
+thermostat dial with current temperature, a setpoint below it, a narrow Boost
+indicator and a column of shortcuts. The shortcuts switch locally between the
+dial, temperature, humidity, program, Boost, heating statistics and information.
+Switching views never calls a thermostat service or creates HA helper entities.
 
-Home Assistant's documented `window.loadCardHelpers()` is available only after
-its dashboard runtime has loaded. If it is already available, the panel uses
-those helpers to create a native climate **Tile** with the bundled Smarther
-features. On direct/cold entry without those helpers, a standalone climate widget
-shows the same controls and status. Both paths use the same command gates.
+The appearance is inspired by the native HA thermostat and the original YAML
+card. It is implemented as a self-contained component instead of patching the
+native card's internal CSS. It looks and works the same on direct/cold entry and
+after visiting a dashboard; no dashboard-runtime prerequisite or third-party
+frontend package is required.
 
-This deliberate standalone path avoids loading private HA components or requiring
-a preliminary visit to another dashboard. The native Thermostat dial is not the
-default because its controls cannot express Smarther's additional read-only and
-fresh-telemetry gates. A future HA API could make native Tile availability uniform;
-the current panel does not assume that API exists.
+Use +/- or type a target and choose **Apply** (or Enter). Selecting a program
+also requires **Apply**. In the Boost view, choosing 30/60/90 minutes is local;
+**Start Boost** sends the explicit request. Mode and cancel actions require a
+click. Commands recheck read-only, availability, live telemetry, device mapping
+and valid values at the gesture boundary. State is never updated optimistically.
+
+Temperature and humidity use Home Assistant's authenticated history API for the
+last 24 hours. Minima/maxima describe recorded samples. Unknown/unavailable data
+remain gaps rather than zero values. No chart data are generated in production.
+
+The statistics view requests seven days of climate history and sums intervals
+whose recorded HVAC action is heating. Each interval is capped by the recorded
+last-live timestamp and control age limit, so stale snapshots and missing
+intervals are excluded. Days follow Home Assistant's configured timezone,
+including midnight/DST boundaries. Labels say **recorded minutes**: partial
+history must not be read as complete physical runtime or energy consumption.
+Before this integration has recorded those attributes, older days may have no
+usable samples. No statistics sensors or recorder data are created or rewritten.
+
+History is fetched when a history/statistics view is opened and cached for one
+minute while the panel is open. If history/Recorder is unavailable or excludes
+the entity, the card shows an honest unavailable/empty state; thermostat readings
+and controls still work. History requires no new manual setup for the panel.
 
 Read-only, unavailable and stale states retain readings/status but block command
 controls. Retained snapshots alone do not authorize commands. Backend bridge,
@@ -84,14 +102,12 @@ scompare; nascondendo tutti i dispositivi scompare anche la voce nel menu.
 Riattivandone uno, il pannello ricompare automaticamente. La visibilità non
 abilita comandi e non modifica le dashboard personali.
 
-Il pannello include temperatura, modalità, programma, Boost e telemetria. Usa
-la Tile nativa quando i card helper di HA sono già disponibili; all'apertura
-diretta funziona comunque con un widget autonomo equivalente. Sola lettura,
+Il pannello include temperatura, modalità, programma, Boost e telemetria. La grafica riprende il quadrante della card originale, con scorciatoie laterali,
+grafici temperatura/umidità e statistiche dei minuti di riscaldamento registrati.
+Funziona allo stesso modo anche all’apertura diretta. Sola lettura,
 indisponibilità e telemetria obsoleta impediscono i comandi in entrambi i casi.
 
 ## References
 
 - [Custom panels](https://contributors.home-assistant.io/frontend/custom-ui/panel/)
-- [Documented card helpers](https://contributors.home-assistant.io/frontend/custom-ui/card/)
-- [Custom card features](https://contributors.home-assistant.io/frontend/custom-ui/card-feature/)
 - [Async static paths](https://contributors.home-assistant.io/blog/2024/06/18/async_register_static_paths/)

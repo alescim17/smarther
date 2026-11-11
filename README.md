@@ -99,11 +99,15 @@ widget includes current/target temperature, mode, program, Boost 30/60/90 and
 cancel, humidity, heating, Boost end and live/stale telemetry. Controls respect
 read-only and fresh-telemetry policy. Opening the panel sends no commands.
 
-The panel works when opened directly. Where Home Assistant's documented card
-helpers are already available, it hosts a native climate **Tile** with Smarther
-features. Otherwise it renders its own equivalent climate widget with the same
-controls and safety gates. It never imports private HA frontend modules or asks
-you to open another dashboard first. No third-party cards are required.
+The panel uses a compact thermostat face inspired by the original Smarther
+card: a large temperature dial, discreet setpoint controls, a narrow Boost
+indicator and side shortcuts. Temperature/humidity charts show the last 24 hours;
+heating statistics show recorded minutes over seven local calendar days. Missing
+or stale intervals are excluded rather than counted as heating.
+
+This is a self-contained widget close to HA's native thermostat appearance,
+with the same rendering on direct entry and after browsing dashboards. No
+third-party cards, CSS patches to HA components or extra user setup are required.
 
 **Show this thermostat in the Smarther panel** is on by default in each device's
 Options. Turning it off hides that device; hiding all devices removes the menu
