@@ -51,7 +51,7 @@ class SmartherMqttHub:
             "identifiers": {("bticino_smarther_mqtt", self.stable_id)},
             "name": self.entry.title,
             "manufacturer": "BTicino",
-            "model": "Smarther (legacy MQTT bridge)",
+            "model": "Smarther V1 (MQTT)",
         }
 
     @property
