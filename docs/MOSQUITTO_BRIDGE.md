@@ -1,5 +1,7 @@
 # MQTT and Mosquitto bridge configuration
 
+New to Smarther MQTT? Follow the [illustrated one-time setup guide](FIRST_TIME_SETUP.md) first. This page covers the private Mosquitto bridge in detail.
+
 BTicino Smarther MQTT uses Home Assistant's existing MQTT connection. A separate bridge forwards supported device messages between a **local broker** and the **vendor's remote MQTT service**. The cloud link is a prerequisite; the integration cannot configure vendor credentials automatically.
 
 ## Prerequisites
