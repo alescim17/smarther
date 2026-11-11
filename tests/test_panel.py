@@ -90,6 +90,7 @@ class PanelTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(config["webcomponent_name"], "smarther-panel")
         self.assertRegex(config["module_url"], r"/smarther-panel\.js\?v=[a-f0-9]{12}$")
         self.assertFalse(config["require_admin"])
+        self.assertEqual(config["sidebar_icon"], "mdi:fire")
         hass.http.async_register_static_paths.assert_awaited_once()
         websocket.async_register_command.assert_called_once()
         first.options["show_panel"] = False

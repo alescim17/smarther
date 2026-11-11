@@ -17,7 +17,7 @@ of the remote MQTT service; service terms and broker-side limits may apply.
 
 ## Compatibility
 
-The current release is **v0.1.1**. It adds an automatically registered Smarther
+The current release is **v0.1.2**. It includes an automatically registered Smarther
 sidebar panel with one thermostat card per visible device, temperature and
 humidity history charts, recorded heating statistics and a Boost countdown.
 See [panel guide](docs/DASHBOARD.md).

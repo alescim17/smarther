@@ -71,7 +71,7 @@ async def async_setup_panel(hass: HomeAssistant, entry) -> None:
             await panel_custom.async_register_panel(
                 hass, webcomponent_name="smarther-panel",
                 frontend_url_path=PANEL_PATH, sidebar_title="Smarther",
-                sidebar_icon="mdi:thermostat", require_admin=False,
+                sidebar_icon="mdi:fire", require_admin=False,
                 module_url=f"{RESOURCE_URL}?v={data['version']}",
                 config={},
             )
