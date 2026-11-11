@@ -17,6 +17,11 @@ of the remote MQTT service; service terms and broker-side limits may apply.
 
 ## Compatibility
 
+The current release is **v0.1.1**. It adds an automatically registered Smarther
+sidebar panel with one thermostat card per visible device, temperature and
+humidity history charts, recorded heating statistics and a Boost countdown.
+See [panel guide](docs/DASHBOARD.md).
+
 - **Smarther V1:** MQTT compatibility was verified on one first-generation
   BTicino device in the X8000/X800W family (including X8000W), originally
   managed by the Thermostat app. Individual V1 product codes have not all been independently tested.
